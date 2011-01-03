@@ -44,6 +44,7 @@ func PingHandler(){ //triggered on CTCP ping reply
 func ListenCall(l *net.TCPListener){
   for {
     conn,_:=l.Accept()
+    fmt.Println("Incoming connection!")
     message := make([]byte, 1000)
     _,err := conn.Read(message)
     if err != nil {
@@ -67,7 +68,7 @@ func ListenCall(l *net.TCPListener){
       }
       conn.Write([]byte(marshaldata))
     } else if strings.Contains(string(message),"new tweet"){
-      
+      fmt.Println("trying to read tweet")
       num,_ := conn.Read(message)
       var tweet Tweet
       fmt.Println("incoming tweet", string(message))
