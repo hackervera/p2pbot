@@ -66,8 +66,10 @@ func ListenCall(l *net.TCPListener){
       }
       conn.Write([]byte(marshaldata))
     } else if strings.Contains(string(message),"new tweet"){
+      
       num,_ := conn.Read(message)
       var tweet Tweet
+      fmt.Println("incoming tweet", message)
       merr := json.Unmarshal(message[0:num],&tweet)
       if merr != nil {
         fmt.Println(merr)
