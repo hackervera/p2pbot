@@ -5,6 +5,7 @@ import (
   "fmt"
   "net"
   "json"
+  "time"
 )
 func PingHandler(){ //triggered on CTCP ping reply
   for {
@@ -50,15 +51,15 @@ func ListenCall(l *net.TCPListener){
     var marshaldata []byte
     if strings.Contains(string(message),"peer"){
       data := &PeerBlob{GetPeers(),"good"}
-      //marshaldata := make([]byte, 1000)
-      
       marshaldata,err = json.Marshal(data)
       if err != nil {
         fmt.Println(err)
       }
       conn.Write([]byte(marshaldata))
     } else if strings.Contains(string(message),"data"){
-      data := &[]Tweet{{"test","hello world"}}
+      timestamp := time.LocalTime().String()
+      fmt.Println(timestamp)
+      data := GetTweets()
       marshaldata,err = json.Marshal(data)
       if err != nil {
         fmt.Println(err)
@@ -83,12 +84,22 @@ func GetDataFromPeers(){
       }
       fmt.Println("Success! Reading data")
       _,err = conn.Write([]byte("i can haz data"))
-      message := make([]byte,200)
-      _,err = conn.Read(message)
+      message := make([]byte,1000)
+      num,err := conn.Read(message)
       if err != nil {
         fmt.Println(err)
       }
-      fmt.Println(string(message))
+      var tweets []Tweet
+      err = json.Unmarshal(message[0:num],&tweets)
+      if err != nil {
+        fmt.Println(err)
+      }
+      fmt.Println("Writing tweets to database",tweets)
+      for _,tweet := range tweets {
+        fmt.Println("Writing",tweet)
+        WriteTweet(tweet)
+      }
+      
     }(ip)
   }
 }

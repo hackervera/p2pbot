@@ -57,6 +57,23 @@ func GetPeers() []string{
   return ips
 }
 
+func WriteTweet(tweet Tweet){
+  stmt,perr := db.Prepare("SELECT * FROM tweets WHERE timestamp = ?")
+  if perr != nil{
+    fmt.Println("While SELECTing",perr)
+  }
+  eerr := stmt.Exec(tweet.Timestamp)
+  if eerr != nil {
+    fmt.Println("While running Exec()",eerr)
+  }
+  if !stmt.Next() { 
+    fmt.Println("Inserting:",tweet,"into database")
+    db.Exec("INSERT INTO tweets (author,message,timestamp) VALUES (?,?,?)",tweet.Name,tweet.Message,tweet.Timestamp)
+  } else {
+    fmt.Println("Skipping",tweet)
+  }
+  stmt.Finalize()
+}
 
 func SetupDatabase(){
   db, _ = sqlite.Open("foo.db") 
@@ -75,3 +92,27 @@ func SetupDatabase(){
   } 
   stmt.Finalize()
 }
+
+func GetTweets() []Tweet{
+  stmt,perr := db.Prepare("SELECT * FROM tweets")
+  if perr != nil{
+    fmt.Println("While SELECTing",perr)
+  }
+  eerr := stmt.Exec()
+  if eerr != nil {
+    fmt.Println("While running Exec()",eerr)
+  }
+  var tweets []Tweet
+  for {
+    if !stmt.Next() { 
+      break
+    } else {
+      var author,message,timestamp string
+      stmt.Scan(&author,&message,&timestamp)
+      tweet := &Tweet{author,message,timestamp}
+      tweets = append(tweets, *tweet)
+    }
+  }
+  return tweets
+}
+

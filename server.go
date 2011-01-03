@@ -56,6 +56,7 @@ type Peer struct {
 type Tweet struct{
   Name string
   Message string
+  Timestamp string
 }
 
 
