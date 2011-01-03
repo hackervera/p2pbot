@@ -71,6 +71,7 @@ func ListenCall(l *net.TCPListener){
     } else if strings.Contains(string(message),"new tweet"){
       fmt.Println("trying to read tweet")
       var marshaldata = make([]byte,1000)
+      conn.Write([]byte("flush"))
       num,_ := conn.Read(marshaldata)
       fmt.Println(num)
       var tweet Tweet
