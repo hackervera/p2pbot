@@ -70,7 +70,7 @@ func ListenCall(l *net.TCPListener){
       var tweet Tweet
       json.Unmarshal(message,&tweet)
       WriteTweet(tweet)
-      messageChan <- []byte(tweet.Name + tweet.Message)
+      messageChan <- []byte(genMessage(tweet.Name + tweet.Message))
     } else {
       conn.Write([]byte("no dataz for you!"))
     }

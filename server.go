@@ -109,7 +109,7 @@ func Multiplex(){ // handles websocket connections
       conns[subscription.conn] = 1
     case message := <-messageChan: // to websocket client from bot
       
-      fmt.Println("got message:", message)
+      fmt.Println("got message:", string(message))
       
       for conn, _ := range conns {
         if _, err := conn.Write(message); err != nil {
