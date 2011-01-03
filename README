@@ -1,0 +1,6 @@
+run makefile
+
+dependencies:  
+http://gosqlite.googlecode.com/hg/sqlite  
+https://github.com/thoj/Go-IRC-Client-Library
+
