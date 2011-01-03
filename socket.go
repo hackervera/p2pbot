@@ -16,7 +16,8 @@ func PingHandler(){ //triggered on CTCP ping reply
       fmt.Println(err)
       break
     }
-    fmt.Println("Success!")
+    fmt.Println("Success! Writing host to peer database")
+    WritePeers([]string{host})
     message := make([]byte,1000)
     var num int
     num,err = conn.Write([]byte("i can haz peers"))
