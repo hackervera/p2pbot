@@ -47,10 +47,18 @@ func ListenCall(l *net.TCPListener){
     if err != nil {
       fmt.Println(err)
     }
+    var marshaldata []byte
     if strings.Contains(string(message),"peer"){
       data := &PeerBlob{GetPeers(),"good"}
       //marshaldata := make([]byte, 1000)
-      var marshaldata []byte
+      
+      marshaldata,err = json.Marshal(data)
+      if err != nil {
+        fmt.Println(err)
+      }
+      conn.Write([]byte(marshaldata))
+    } else if strings.Contains(string(message),"data"){
+      data := &[]Tweet{{"test","hello world"}}
       marshaldata,err = json.Marshal(data)
       if err != nil {
         fmt.Println(err)
@@ -62,3 +70,25 @@ func ListenCall(l *net.TCPListener){
   }
 }
 
+func GetDataFromPeers(){
+  peers := GetPeers()
+  for i:= range peers {
+    ip:= peers[i]
+    go func(ip string){
+      fmt.Println("Dialing",ip)
+      conn,err := net.Dial("tcp","",ip+":7878")
+      if err != nil {
+        fmt.Println(err)
+        return
+      }
+      fmt.Println("Success! Reading data")
+      _,err = conn.Write([]byte("i can haz data"))
+      message := make([]byte,200)
+      _,err = conn.Read(message)
+      if err != nil {
+        fmt.Println(err)
+      }
+      fmt.Println(string(message))
+    }(ip)
+  }
+}

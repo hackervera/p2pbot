@@ -53,6 +53,10 @@ type Peer struct {
   Ip string
 }
 
+type Tweet struct{
+  Name string
+  Message string
+}
 
 
 func genMessage(text string) string { //create javascript to send to websocket client
@@ -120,13 +124,15 @@ func Multiplex(){ // handles websocket connections
   
 func main(){
   //TODO xdg-open
+  SetupDatabase()
   go PingHandler()
   listenaddr,_ := net.ResolveTCPAddr("0.0.0.0:7878")
   listener,_ := net.ListenTCP("tcp", listenaddr)
   go ListenCall(listener)
   go Multiplex()
   go ircStuff()
-  go SetupDatabase()
+  
+  go GetDataFromPeers()
   
   flag.StringVar(&portNumber,"port", "9999", "port number for web client")
   flag.StringVar(&hostName,"hostname", "localhost", "hostname for web client")
