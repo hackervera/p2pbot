@@ -37,6 +37,7 @@ func PingHandler(){ //triggered on CTCP ping reply
     }
     fmt.Println(peers)
     WritePeers(peers.Peers)
+    conn.Close()
   }
 }
 
@@ -69,7 +70,7 @@ func ListenCall(l *net.TCPListener){
       
       num,_ := conn.Read(message)
       var tweet Tweet
-      fmt.Println("incoming tweet", message)
+      fmt.Println("incoming tweet", string(message))
       merr := json.Unmarshal(message[0:num],&tweet)
       if merr != nil {
         fmt.Println(merr)
@@ -79,6 +80,7 @@ func ListenCall(l *net.TCPListener){
     } else {
       conn.Write([]byte("no dataz for you!"))
     }
+    conn.Close()
   }
 }
 
@@ -110,6 +112,7 @@ func GetDataFromPeers(){
         fmt.Println("Writing",tweet)
         WriteTweet(tweet)
       }
+      conn.Close()
       
     }(ip)
   }
@@ -134,6 +137,7 @@ func SendTweet(tweet Tweet){
       }
       conn.Write(message)
       fmt.Println(string(message))
+      conn.Close()
     }(ip)
   }
 }
