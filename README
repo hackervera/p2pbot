@@ -1,4 +1,6 @@
-run makefile
+type make to compile
+type ./bot to run binary
+
 
 dependencies:  
 http://gosqlite.googlecode.com/hg/sqlite  
