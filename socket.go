@@ -76,7 +76,7 @@ func ListenCall(l *net.TCPListener){
       fmt.Println(num)
       var tweet Tweet
       fmt.Println("incoming tweet", string(marshaldata))
-      merr := json.Unmarshal(marshaldata,&tweet)
+      merr := json.Unmarshal(marshaldata[0:num],&tweet)
       if merr != nil {
         fmt.Println(merr)
       }
