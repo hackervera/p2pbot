@@ -103,3 +103,28 @@ func GetDataFromPeers(){
     }(ip)
   }
 }
+
+func SendTweet(tweet Tweet){
+  peers := GetPeers()
+  for i:= range peers {
+    ip:= peers[i]
+    go func(ip string){
+      fmt.Println("Dialing",ip)
+      conn,err := net.Dial("tcp","",ip+":7878")
+      if err != nil {
+        fmt.Println(err)
+        return
+      }
+      fmt.Println("Success! Sending tweet")
+      conn.Write([]byte("I haz new tweet"))
+      message,merr := json.Marshal(tweet)
+      if merr != nil {
+        fmt.Println(merr)
+      }
+      conn.Write(message)
+      fmt.Println(string(message))
+    }(ip)
+  }
+}
+      
+

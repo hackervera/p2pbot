@@ -69,15 +69,14 @@ func genMessage(text string) string { //create javascript to send to websocket c
 }
 
 
-func Subscribe(ws *websocket.Conn){ //incoming message from websocket
-  subscriptionChan <- subscription{ws, true}
-  
-
+func Subscribe(ws *websocket.Conn){ //message to bot from websocket clientside
+  subscriptionChan <- subscription{ws, true} // add this channel to multiplexer
   fmt.Println("just sent subscription message to channel")
    for {
       buf := make([]byte, 1000)
       n, err := ws.Read(buf)
       if err != nil {
+        fmt.Println(err)
         break
       }
       msg := buf[0:n]
@@ -88,10 +87,11 @@ func Subscribe(ws *websocket.Conn){ //incoming message from websocket
       }
       json.Unmarshal(msg,&incoming)
       if incoming.Type == "update" {
-        ircChan <- []byte(incoming.Msg)
-        fmt.Println(string(buf[0:n]))
         timestamp := time.LocalTime().String()
         fmt.Println(timestamp)
+        tweet := &Tweet{incoming.Name, incoming.Msg, timestamp}
+        WriteTweet(*tweet)
+        SendTweet(*tweet)
       }
       if incoming.Type == "username" {
         hasUsername = 1
@@ -124,7 +124,7 @@ func Multiplex(){ // handles websocket connections
 
   
 func main(){
-  //TODO xdg-open
+  
   SetupDatabase()
   go PingHandler()
   listenaddr,_ := net.ResolveTCPAddr("0.0.0.0:7878")
