@@ -107,7 +107,7 @@ func Multiplex(){ // handles websocket connections
     case subscription := <-subscriptionChan:
       fmt.Println("got subscription")
       conns[subscription.conn] = 1
-    case message := <-messageChan: // to web client
+    case message := <-messageChan: // to websocket client from bot
       
       fmt.Println("got message:", message)
       
