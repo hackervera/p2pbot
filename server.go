@@ -92,6 +92,7 @@ func Subscribe(ws *websocket.Conn){ //message to bot from websocket clientside
     if incoming.Type == "username" {
       hasUsername = 1
       myUsername = incoming.Name
+      WriteName(incoming.Name)
     }
   }
 }
