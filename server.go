@@ -123,6 +123,7 @@ func main(){
   
   SetupDatabase()
   go UDPServer()
+  go ProcessUDP()
   go Multiplex()
   go ircStuff()
   
