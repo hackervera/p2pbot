@@ -89,6 +89,7 @@ func SetupDatabase(){
     }
     stmt.Scan(&myUsername)
     fmt.Println("found username:",myUsername)
+    break
   } 
   stmt.Finalize()
 }

@@ -22,10 +22,9 @@ func ircStuff() {
     if nick == e.Nick {
       irccon.Privmsg("#bootstrap",nick + " has arrived!")
       //irccon.Privmsg("#bootstrap","PING")
-      irccon.SendRaw("who #bootstrap")
-      time.Sleep(3000000000)
+      go irccon.SendRaw("who #bootstrap")
+      time.Sleep(10e9)
       WritePeers(peers)
-      peers = GetPeers()
       go BroadcastPeers()
       go BroadcastTweets()
       
