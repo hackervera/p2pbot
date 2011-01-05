@@ -26,7 +26,8 @@ func ircStuff() {
       time.Sleep(3000000000)
       WritePeers(peers)
       peers = GetPeers()
-      BroadcastPeers(peers)
+      go BroadcastPeers()
+      go BroadcastTweets()
       
     }
   })
