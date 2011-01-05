@@ -57,7 +57,7 @@ func GetPeers() []string{
   return ips
 }
 
-func WriteTweet(tweet Tweet){
+func WriteTweet(tweet *Tweet){
   stmt,perr := db.Prepare("SELECT * FROM tweets WHERE timestamp = ?")
   if perr != nil{
     fmt.Println("While SELECTing",perr)

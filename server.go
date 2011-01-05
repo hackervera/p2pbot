@@ -40,7 +40,7 @@ type subscription struct {
 type Packet struct {
   Type string
   Peers []string
-  Tweets []Tweet
+  Tweet *Tweet
 }
 
 type record struct {
@@ -86,10 +86,9 @@ func Subscribe(ws *websocket.Conn){ //message to bot from websocket clientside
       timestamp := time.LocalTime().String()
       //fmt.Println(timestamp)
       tweet := &Tweet{incoming.Name, incoming.Msg, timestamp}
-      WriteTweet(*tweet)
-      messageChan <- []byte("window.location.reload()")
+      TweetChan <- tweet
+      WriteTweet(tweet)
       //BroadcastTweets()
-      BroadcastTweet(tweet)
       //SendTweet(*tweet)
     }
     if incoming.Type == "username" {
@@ -129,6 +128,7 @@ func main(){
   go ProcessUDP()
   go Multiplex()
   go ircStuff()
+  go TweetSender()
   
   //go GetDataFromPeers()
   
