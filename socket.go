@@ -1,129 +1,65 @@
 package main
 
 import (
-  "strings"
+  //"strings"
   "fmt"
   "net"
   "json"
-  "time"
+  //"time"
+  "os"
 )
-func PingHandler(){ //triggered on CTCP ping reply
-  for {
-    res:=<-PingResponse
-    host := strings.Split(res," from ",-1)[0]
-    fmt.Println("Dialing",host)
-    conn,err := net.Dial("tcp","",host+":7878")
+
+func BroadcastPeers(peers []string){
+  for _,peer := range peers {
+    fmt.Println("Dialing",peer,"...")
+    conn,err := net.Dial("udp","",peer+":7878")
     if err != nil {
       fmt.Println(err)
       break
     }
-    fmt.Println("Success! Writing host to peer database")
-    WritePeers([]string{host})
-    message := make([]byte,1000)
-    var num int
-    num,err = conn.Write([]byte("i can haz peers"))
-    num,err = conn.Read(message)
-    if err != nil {
-      fmt.Println(err)
+    //fmt.Println(conn)
+    peerpacket := &Packet{"peers",peers,nil}
+    jsonbuf,jerr := json.Marshal(peerpacket)
+    if jerr != nil {
+      fmt.Println(jerr)
     }
-    if num < 1 {
-      fmt.Println("No data received")
-    }
-    var peers PeerBlob
-    fmt.Println("Received data:",string(message))
-    err = json.Unmarshal(message[0:num],&peers)
-    if err != nil {
-      fmt.Println(err)
-    }
-    fmt.Println(peers)
-    WritePeers(peers.Peers)
-    fmt.Println("closing connection")
-    conn.Close()
+    conn.Write(jsonbuf)
   }
 }
 
-func ListenCall(l *net.TCPListener){
+
+func UDPServer(){
+  c,cerr := net.ListenPacket("udp", "0.0.0.0:7878")
+  if cerr != nil {
+    fmt.Println("Error while reading from UDP:",cerr)
+    os.Exit(1)
+  }
+
+  var buf [1000]byte
   for {
-    conn,_:=l.Accept()
-    fmt.Println("Incoming connection!")
-    message := make([]byte, 1000)
-    _,err := conn.Read(message)
-    if err != nil {
-      fmt.Println(err)
+    n, addr, aerr := c.ReadFrom(buf[0:])
+    if aerr != nil {
+      fmt.Println("Error while reading from UDP:",aerr)
+      os.Exit(1)
     }
-    var marshaldata []byte
-    if strings.Contains(string(message),"peer"){
-      data := &PeerBlob{GetPeers(),"good"}
-      marshaldata,err = json.Marshal(data)
-      if err != nil {
-        fmt.Println(err)
-      }
-      conn.Write([]byte(marshaldata))
-    } else if strings.Contains(string(message),"data"){
-      timestamp := time.LocalTime().String()
-      fmt.Println(timestamp)
-      data := GetTweets()
-      marshaldata,err = json.Marshal(data)
-      if err != nil {
-        fmt.Println(err)
-      }
-      conn.Write([]byte(marshaldata))
-    } else if strings.Contains(string(message),"new tweet"){
-      fmt.Println("trying to read tweet")
-      var marshaldata = make([]byte,1000)
-      conn.Write([]byte("flush"))
-      num,_ := conn.Read(marshaldata)
-      fmt.Println(num)
-      var tweet Tweet
-      fmt.Println("incoming tweet", string(marshaldata))
-      merr := json.Unmarshal(marshaldata[0:num],&tweet)
-      if merr != nil {
-        fmt.Println(merr)
-      }
-      WriteTweet(tweet)
-      messageChan <- []byte(genMessage(tweet.Name + tweet.Message))
-    } else {
-      conn.Write([]byte("no dataz for you!"))
+    fmt.Println("read",n,"bytes")
+    fmt.Println("addr:",addr)
+    fmt.Println("Incoming message:",string(buf[0:n]))
+    _,werr := c.WriteTo([]byte("Got your message"),addr)
+    if werr != nil {
+      fmt.Println("write error:",werr)
     }
-    fmt.Println("closing connection")
-    conn.Close()
+    var packet Packet
+    json.Unmarshal(buf[0:n],&packet)
+    if packet.Type == "peers" {
+      fmt.Println(packet.Peers)
+      fmt.Println("Adding peers")
+      WritePeers(packet.Peers)
+    }
+    
   }
 }
 
-func GetDataFromPeers(){
-  peers := GetPeers()
-  for i:= range peers {
-    ip:= peers[i]
-    go func(ip string){
-      fmt.Println("Dialing",ip)
-      conn,err := net.Dial("tcp","",ip+":7878")
-      if err != nil {
-        fmt.Println(err)
-        return
-      }
-      fmt.Println("Success! Reading data")
-      _,err = conn.Write([]byte("i can haz data"))
-      message := make([]byte,1000)
-      num,err := conn.Read(message)
-      if err != nil {
-        fmt.Println(err)
-      }
-      var tweets []Tweet
-      err = json.Unmarshal(message[0:num],&tweets)
-      if err != nil {
-        fmt.Println(err)
-      }
-      fmt.Println("Writing tweets to database",tweets)
-      for _,tweet := range tweets {
-        fmt.Println("Writing",tweet)
-        WriteTweet(tweet)
-      }
-      fmt.Println("closing connection")
-      conn.Close()
-      
-    }(ip)
-  }
-}
 
 func SendTweet(tweet Tweet){
   peers := GetPeers()

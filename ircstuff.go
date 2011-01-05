@@ -7,6 +7,7 @@ import (
 )
 func ircStuff() {
   var nick string
+  var peers []string
   type payload struct {
     Author string
     Text string
@@ -18,8 +19,16 @@ func ircStuff() {
   
   irccon.AddCallback("JOIN",func(e *irc.IRCEvent){
     fmt.Println(e)
-    nick = e.Nick
-    irccon.Privmsg("#bootstrap","PING")
+    if nick == e.Nick {
+      irccon.Privmsg("#bootstrap",nick + " has arrived!")
+      //irccon.Privmsg("#bootstrap","PING")
+      irccon.SendRaw("who #bootstrap")
+      time.Sleep(3000000000)
+      WritePeers(peers)
+      peers = GetPeers()
+      BroadcastPeers(peers)
+      
+    }
   })
   irccon.AddCallback("NOTICE",func(e *irc.IRCEvent){
     if strings.Contains(e.Message, "PING"){ 
@@ -27,7 +36,14 @@ func ircStuff() {
       PingResponse <- e.Host
     }
   })
-  
+  irccon.AddCallback("311",func(e *irc.IRCEvent){
+    //irccon.Privmsg("#bootstrap",e.Arguments[3])
+  })
+  irccon.AddCallback("352",func(e *irc.IRCEvent){ // who response from server
+    //irccon.Privmsg("#bootstrap",e.Arguments[3])
+    peers = append(peers,e.Arguments[3])
+    //WritePeer(e.Arguments[3])
+  })
   irccon.AddCallback("372",func(e *irc.IRCEvent){
     //fmt.Println(e)
   })
@@ -46,6 +62,7 @@ func ircStuff() {
   irccon.AddCallback("001", func(e *irc.IRCEvent) { 
     irccon.Join("#bootstrap") 
     fmt.Println(e)
+    nick = e.Arguments[0]
   })
     
   go func(){

@@ -11,7 +11,7 @@ import (
   //"os"
   //"bytes"
   "flag"
-  "net"
+  //"net"
   //sqlite "gosqlite.googlecode.com/hg/sqlite"
 
 )
@@ -37,20 +37,16 @@ type subscription struct {
     subscribe bool
 }
 
-type PeerBlob struct {
+type Packet struct {
+  Type string
   Peers []string
-  Status string
+  Tweets []Tweet
 }
 
 type record struct {
   Author string
   Message string
   Timestamp string
-}
-
-type Peer struct {
-  Name string
-  Ip string
 }
 
 type Tweet struct{
@@ -72,33 +68,33 @@ func genMessage(text string) string { //create javascript to send to websocket c
 func Subscribe(ws *websocket.Conn){ //message to bot from websocket clientside
   subscriptionChan <- subscription{ws, true} // add this channel to multiplexer
   fmt.Println("just sent subscription message to channel")
-   for {
-      buf := make([]byte, 1000)
-      n, err := ws.Read(buf)
-      if err != nil {
-        fmt.Println(err)
-        break
-      }
-      msg := buf[0:n]
-      var incoming struct {
-        Type string
-        Msg string
-        Name string
-      }
-      json.Unmarshal(msg,&incoming)
-      if incoming.Type == "update" {
-        timestamp := time.LocalTime().String()
-        fmt.Println(timestamp)
-        tweet := &Tweet{incoming.Name, incoming.Msg, timestamp}
-        WriteTweet(*tweet)
-        SendTweet(*tweet)
-      }
-      if incoming.Type == "username" {
-        hasUsername = 1
-        myUsername = incoming.Name
-      }
+  for {
+    buf := make([]byte, 1000)
+    n, err := ws.Read(buf)
+    if err != nil {
+      fmt.Println(err)
+      break
+    }
+    msg := buf[0:n]
+    var incoming struct {
+      Type string
+      Msg string
+      Name string
+    }
+    json.Unmarshal(msg,&incoming)
+    if incoming.Type == "update" {
+      timestamp := time.LocalTime().String()
+      //fmt.Println(timestamp)
+      tweet := &Tweet{incoming.Name, incoming.Msg, timestamp}
+      WriteTweet(*tweet)
+      SendTweet(*tweet)
+    }
+    if incoming.Type == "username" {
+      hasUsername = 1
+      myUsername = incoming.Name
     }
   }
+}
 
 func Multiplex(){ // handles websocket connections
   conns := make(map[*websocket.Conn]int)
@@ -126,14 +122,11 @@ func Multiplex(){ // handles websocket connections
 func main(){
   
   SetupDatabase()
-  go PingHandler()
-  listenaddr,_ := net.ResolveTCPAddr("0.0.0.0:7878")
-  listener,_ := net.ListenTCP("tcp", listenaddr)
-  go ListenCall(listener)
+  go UDPServer()
   go Multiplex()
   go ircStuff()
   
-  go GetDataFromPeers()
+  //go GetDataFromPeers()
   
   flag.StringVar(&portNumber,"port", "9999", "port number for web client")
   flag.StringVar(&hostName,"hostname", "localhost", "hostname for web client")

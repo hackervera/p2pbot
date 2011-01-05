@@ -1,8 +1,15 @@
 package main
 import (
   "http"
+  "strings"
 )
 func hello(res http.ResponseWriter, req *http.Request) {
+  tweets := GetTweets()
+  var tweet []string
+  for _,v := range tweets {
+    tweet = append(tweet, "<p>"+v.Name + "said: <b>" + v.Message + "</b> @"+v.Timestamp+"</p>")
+  }
+  tweetstring := strings.Join(tweet, " ")
   var div, blocker string
   if hasUsername != 1{
     div = `
@@ -88,6 +95,7 @@ func hello(res http.ResponseWriter, req *http.Request) {
 <a href='#' onClick="var json = {}; json.type = 'update'; json.msg = document.getElementById('status-update').value; websocket.send(JSON.stringify(json)); $('#output').prepend('<p>'+document.getElementById('status-update').value+'</p>'); $('#status-update').val(''); "><br>Send Message</a> 
 </div>
 <div id="output"></div>
+<div id='review'>`+tweetstring+`</div>
 <script>` + blocker + `</script>
 </html> 
 `
