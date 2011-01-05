@@ -77,6 +77,27 @@ func BroadcastTweets(){
   }
 }
 
+func BroadcastTweet(tweet *Tweet){
+  peers := GetPeers()
+  for _,peer := range peers {
+    fmt.Println("Dialing",peer,"...")
+    conn,err := net.Dial("udp","",peer+":7878")
+    
+    if err != nil {
+      fmt.Println(err)
+      break
+    }
+    tweets := []Tweet{*tweet}
+    tweetpacket := &Packet{"tweet",nil,tweets}
+    var jsonbuf []byte
+    jsonbuf,err = json.Marshal(tweetpacket)
+    if err != nil {
+      fmt.Println(err)
+    }
+    conn.Write(jsonbuf)
+  }
+}
+
 type UDPresponse struct {
   N int
   Buf [10000]byte
@@ -120,7 +141,7 @@ func ProcessUDP(){
     }
     buf := reply.Buf
     n := reply.N
-    addr := reply.Addr
+    //addr := reply.Addr
     fmt.Println("read",reply.N,"bytes")
     fmt.Println("addr:",reply.Addr)
     fmt.Println("Incoming message:",string(buf[0:n]))
@@ -130,23 +151,14 @@ func ProcessUDP(){
     if err != nil {
       fmt.Println(err)
     }
-    var sendpacket *Packet
     if packet.Type == "peers" {
       WritePeers(packet.Peers)
-      sendpacket = &Packet{"peers",GetPeers(),nil}
-    } else {
-      sendpacket = &Packet{"peers",GetPeers(),nil}
+    } else if packet.Type == "tweet" {
       for _,v := range packet.Tweets {
         WriteTweet(v)
         messageChan <- []byte("window.location.reload();")
       }
     }
-    jsonbuf,_ := json.Marshal(sendpacket)
-    _,err = reply.Con.WriteTo(jsonbuf,addr)
-    if err != nil {
-      fmt.Println("writing error:",err)
-    }
-   
   }
 }
 

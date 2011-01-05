@@ -88,11 +88,11 @@ func Subscribe(ws *websocket.Conn){ //message to bot from websocket clientside
       tweet := &Tweet{incoming.Name, incoming.Msg, timestamp}
       WriteTweet(*tweet)
       messageChan <- []byte("window.location.reload()")
-      BroadcastTweets()
+      //BroadcastTweets()
+      BroadcastTweet(tweet)
       //SendTweet(*tweet)
     }
     if incoming.Type == "username" {
-      hasUsername = 1
       myUsername = incoming.Name
       WriteName(incoming.Name)
     }

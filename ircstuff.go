@@ -23,10 +23,12 @@ func ircStuff() {
       irccon.Privmsg("#bootstrap",nick + " has arrived!")
       //irccon.Privmsg("#bootstrap","PING")
       go irccon.SendRaw("who #bootstrap")
-      time.Sleep(10e9)
+      
+      time.Sleep(5e9)
+      fmt.Println("About to write peers:",peers)
       WritePeers(peers)
       go BroadcastPeers()
-      go BroadcastTweets()
+      //go BroadcastTweets()
       
     }
   })
@@ -42,6 +44,7 @@ func ircStuff() {
   irccon.AddCallback("352",func(e *irc.IRCEvent){ // who response from server
     //irccon.Privmsg("#bootstrap",e.Arguments[3])
     peers = append(peers,e.Arguments[3])
+    fmt.Println("GOT WHO RESPONSE:",e)
     //WritePeer(e.Arguments[3])
   })
   irccon.AddCallback("372",func(e *irc.IRCEvent){
