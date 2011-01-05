@@ -17,10 +17,10 @@ func BroadcastPeers(){
     conn,err := net.Dial("udp","",peer+":7878")
     if err != nil {
       fmt.Println(err)
-      break
+      continue
     }
     conn.SetReadTimeout(1e9)
-    Connections <- conn
+    
     //fmt.Println(conn)
     peerpacket := &Packet{"peers",peers,nil}
     jsonbuf,jerr := json.Marshal(peerpacket)
@@ -35,7 +35,11 @@ func BroadcastPeers(){
     } else {
       
       var packet *Packet
-      json.Unmarshal(buf[0:size],&packet)
+      err = json.Unmarshal(buf[0:size],&packet)
+      if err != nil {
+        fmt.Println(err)
+        continue
+      }
       if packet.Type == "peers" {
         fmt.Println(packet.Peers)
         WritePeers(packet.Peers) 
@@ -83,26 +87,27 @@ func UDPServer(){
   }
 }
 
-var Connections = make(chan net.Conn)
+var Connections = make(chan *UDPresponse)
 var TweetChan = make(chan *Tweet)
 
 func TweetSender(){
   var err os.Error
-  conns := make(map[net.Conn]int)
+  conns := make(map[*UDPresponse]int)
   for {
     select {
     case connection :=<- Connections:
+      fmt.Println("adding",connection,"to connection store")
       conns[connection] = 1
     case tweet :=<-TweetChan:
       tweetpacket := &Packet{"tweets",nil,tweet}
       var jsonbuf []byte
-      
       jsonbuf,err = json.Marshal(tweetpacket)
       if err != nil {
         fmt.Println(err)
       }
-      for conn,_ := range conns {
-        conn.Write(jsonbuf)
+      for response,_ := range conns {
+        fmt.Println("Writing",string(jsonbuf),"to",response.Con)
+        response.Con.WriteTo(jsonbuf,response.Addr)
       }
     }
   }
@@ -115,7 +120,8 @@ func ProcessUDP(){
       fmt.Println("Error while reading from UDP:",reply.Err)
       os.Exit(1)
     }
-    //Connections <- reply.Conn
+    Connections <- reply
+    reply.Con.WriteTo([]byte("test"), reply.Addr)
     buf := reply.Buf
     n := reply.N
     //addr := reply.Addr
@@ -127,6 +133,7 @@ func ProcessUDP(){
     err := json.Unmarshal(buf[0:n],&packet)
     if err != nil {
       fmt.Println(err)
+      continue
     }
     if packet.Type == "peers" {
       WritePeers(packet.Peers)
