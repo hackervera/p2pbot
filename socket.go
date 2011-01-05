@@ -37,6 +37,7 @@ func BroadcastPeers(){
       json.Unmarshal(buf[0:size],&packet)
       fmt.Println(packet.Peers)
       WritePeers(packet.Peers) 
+      
     }
   }
 }
@@ -69,6 +70,7 @@ func BroadcastTweets(){
       json.Unmarshal(buf[0:size],&packet)
       for _,v := range packet.Tweets {
         WriteTweet(v)
+        messageChan <- []byte("window.location.reload();")
       }
       time.Sleep(1)
     }
@@ -136,6 +138,7 @@ func ProcessUDP(){
       sendpacket = &Packet{"peers",GetPeers(),nil}
       for _,v := range packet.Tweets {
         WriteTweet(v)
+        messageChan <- []byte("window.location.reload();")
       }
     }
     jsonbuf,_ := json.Marshal(sendpacket)

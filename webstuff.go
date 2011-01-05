@@ -6,6 +6,9 @@ import (
 func hello(res http.ResponseWriter, req *http.Request) {
   tweets := GetTweets()
   var tweet []string
+  for i, j := 0, len(tweets)-1; i < j; i, j = i+1, j-1 {
+    tweets[i], tweets[j] = tweets[j], tweets[i]
+  }
   for _,v := range tweets {
     tweet = append(tweet, "<p>"+v.Name + " said: <b>" + v.Message + "</b> @"+v.Timestamp+"</p>")
   }
