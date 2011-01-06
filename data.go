@@ -68,6 +68,7 @@ func WriteTweet(tweet *Tweet){
   if !stmt.Next() { 
     fmt.Println("Inserting:",tweet,"into database")
     db.Exec("INSERT INTO tweets (author,message,timestamp) VALUES (?,?,?)",tweet.Name,tweet.Message,tweet.Timestamp)
+    messageChan <- []byte(tweet.Name + " said: " + tweet.Message + " [" + tweet.Timestamp + "]") //write client's message to webclient
   } else {
     fmt.Println("Skipping",tweet)
   }
