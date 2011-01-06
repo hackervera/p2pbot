@@ -64,7 +64,8 @@ func hello(res http.ResponseWriter, req *http.Request) {
 
   function onMessage(evt)
   {
-    eval(evt.data);
+    $('#output').prepend('<p>'+evt.data+'</p>');
+    //eval(evt.data);
     //websocket.close();
   }
 

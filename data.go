@@ -24,10 +24,9 @@ func WritePeers(peers []string){
       fmt.Println("While running Exec()",eerr)
     }
     if !stmt.Next() { 
-      //fmt.Println("no usernames found") 
       fmt.Println("Inserting:",ip,"into database")
       db.Exec("INSERT INTO peers (ip) VALUES (?)",ip)
-      break
+      continue
     } else {
       fmt.Println("Skipping",ip)
     }

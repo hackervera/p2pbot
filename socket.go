@@ -81,7 +81,7 @@ func TweetSender(){
       fmt.Println("adding",connection,"to connection store")
       conns[connection] = 1
     case tweet :=<-TweetChan:
-      tweetpacket := &Packet{"tweets",nil,tweet}
+      tweetpacket := &Packet{"tweet",nil,tweet}
       var jsonbuf []byte
       jsonbuf,err = json.Marshal(tweetpacket)
       if err != nil {
@@ -128,6 +128,7 @@ func ProcessUDP(){
       
     } else if packet.Type == "tweet" {
       WriteTweet(packet.Tweet)
+      messageChan <- []byte(packet.Tweet.Name + " said: " + packet.Tweet.Message + " [" + packet.Tweet.Timestamp + "]")
     }
   }
 }
@@ -158,9 +159,10 @@ func Read(conn net.Conn){
       if packet.Type == "peers" {
         fmt.Println(packet.Peers)
         WritePeers(packet.Peers) 
-      } else if packet.Type == "tweets" {
+      } else if packet.Type == "tweet" {
         fmt.Println(packet.Tweet)
         WriteTweet(packet.Tweet)
+        messageChan <- []byte(packet.Tweet.Name + " said: " + packet.Tweet.Message + " [" + packet.Tweet.Timestamp + "]")
       }
       
     }
