@@ -115,8 +115,8 @@ func GetTweets() []Tweet{
     } else {
       var author,message,timestamp string
       stmt.Scan(&author,&message,&timestamp)
-      tweet := &Tweet{author,message,timestamp}
-      tweets = append(tweets, *tweet)
+      tweet := Tweet{author,message,timestamp}
+      tweets = append(tweets, tweet)
     }
   }
   return tweets

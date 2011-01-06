@@ -126,6 +126,16 @@ func ProcessUDP(){
   }
 }
 
+func WholeThing(){ // periodically send entire database
+  for {
+    time.Sleep(10e9)
+    tweets := GetTweets()
+    for _,tweet := range tweets {
+      TweetChan <- &tweet
+    }
+  }
+}
+
 func Read(conn net.Conn){ // receives relay's net.Conn interface, Write() goes to relay, Read() reads from relay
   var buf [1000]byte
   var err os.Error
