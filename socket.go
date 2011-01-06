@@ -55,7 +55,7 @@ func BroadcastPeers(){
 
 type UDPresponse struct {
   N int
-  Buf [10000]byte
+  Buf []byte
   Con net.PacketConn
   Addr net.Addr
   Err os.Error
@@ -80,7 +80,7 @@ func UDPServer(){
     fmt.Println(buf[0:n])
     
     
-    res := &UDPresponse{n,buf,c,addr,aerr}
+    res := &UDPresponse{n,buf[0:n],c,addr,aerr}
     fmt.Println("Blocking: waiting for channel write")
     UDPchan <- res
     fmt.Println("Not Blocking, Wrote to channel")
