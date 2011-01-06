@@ -96,7 +96,7 @@ func hello(res http.ResponseWriter, req *http.Request) {
 ` + div + `
 <div id='enter-data'>
 <input type='text' id='status-update'>
-<a href='#' onClick="var json = {}; json.name = '`+myUsername+`'; json.type = 'update'; json.msg = document.getElementById('status-update').value; websocket.send(JSON.stringify(json)); $('#output').prepend('<p>'+document.getElementById('status-update').value+'</p>'); $('#status-update').val(''); "><br>Send Message</a> 
+<a href='#' onClick="var date = new Date(); var json = {}; json.type='tweet';  json.tweet = {}; json.tweet.timestamp = date; json.tweet.name = '`+myUsername+`';  json.tweet.message = document.getElementById('status-update').value; websocket.send(JSON.stringify(json));  /* $('#output').prepend('<p>'+document.getElementById('status-update').value+'</p>');*/ $('#status-update').val(''); "><br>Send Message</a> 
 </div>
 <div id="output"></div>
 <div id='review'>`+tweetstring+`</div>

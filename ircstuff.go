@@ -25,10 +25,8 @@ func ircStuff() {
       go irccon.SendRaw("who #bootstrap")
       
       time.Sleep(5e9)
-      fmt.Println("About to write peers:",peers)
       WritePeers(peers)
       go BroadcastPeers()
-      //go BroadcastTweets()
       
     }
   })

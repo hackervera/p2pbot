@@ -3,16 +3,9 @@ package main
 import (
   "http"
   "fmt"
-  //"strings"
   "websocket"
-  "time"
-  "json"
-  //"io"
-  //"os"
-  //"bytes"
   "flag"
-  //"net"
-  //sqlite "gosqlite.googlecode.com/hg/sqlite"
+  "json"
 
 )
 
@@ -22,6 +15,7 @@ var PingResponse = make(chan string)
 var messageChan = make(chan []byte)
 var ircChan = make(chan []byte)
 var subscriptionChan = make(chan subscription)
+var quit = make(chan int)
 
 //global config vars
 var portNumber string = "9999"
@@ -41,6 +35,7 @@ type Packet struct {
   Type string
   Peers []string
   Tweet *Tweet
+  Name string
 }
 
 type record struct {
@@ -56,59 +51,38 @@ type Tweet struct{
 }
 
 
-func genMessage(text string) string { //create javascript to send to websocket client
-  message := `var pre = document.createElement("p");
-  pre.style.wordWrap = "break-word";
-  pre.innerHTML = "`+text+`";
-  output.insertBefore(pre,output.childNodes[0]);`
-  return message
-}
-
-
-func Subscribe(ws *websocket.Conn){ //message to bot from websocket clientside
+func Subscribe(ws *websocket.Conn){ //called from main() on every websocket opened, also monitors input from webclient
   subscriptionChan <- subscription{ws, true} // add this channel to multiplexer
-  fmt.Println("just sent subscription message to channel")
+  buf := make([]byte, 256)
   for {
-    buf := make([]byte, 1000)
     n, err := ws.Read(buf)
     if err != nil {
       fmt.Println(err)
       break
     }
-    msg := buf[0:n]
-    var incoming struct {
-      Type string
-      Msg string
-      Name string
+    message := buf[0:n]
+    fmt.Println("From webclient:",string(message))
+    var packet *Packet
+    err = json.Unmarshal(message,&packet)
+    if err != nil {
+      fmt.Println(err)
     }
-    json.Unmarshal(msg,&incoming)
-    if incoming.Type == "update" {
-      timestamp := time.LocalTime().String()
-      //fmt.Println(timestamp)
-      tweet := &Tweet{incoming.Name, incoming.Msg, timestamp}
-      TweetChan <- tweet
-      WriteTweet(tweet)
-      //BroadcastTweets()
-      //SendTweet(*tweet)
-    }
-    if incoming.Type == "username" {
-      myUsername = incoming.Name
-      WriteName(incoming.Name)
+    if packet.Type == "username" {
+      myUsername = packet.Name
+    } else if packet.Type == "tweet" {
+      TweetChan <- packet.Tweet
     }
   }
 }
 
-func Multiplex(){ // handles websocket connections
+func Multiplex(){ // handles websocket subscriptions, and messages sent to webclient
   conns := make(map[*websocket.Conn]int)
   for {
     select {
     case subscription := <-subscriptionChan:
       fmt.Println("got subscription")
       conns[subscription.conn] = 1
-    case message := <-messageChan: // to websocket client from bot
-      
-      fmt.Println("got message:", string(message))
-      
+    case message := <-messageChan: 
       for conn, _ := range conns {
         if _, err := conn.Write(message); err != nil {
           conn.Close()
@@ -124,6 +98,7 @@ func Multiplex(){ // handles websocket connections
 func main(){
   
   SetupDatabase()
+  go WriteTweet()
   go UDPServer()
   go ProcessUDP()
   go Multiplex()

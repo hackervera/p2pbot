@@ -6,6 +6,8 @@ import (
 
 var db *sqlite.Conn
 
+var TweetWrite = make(chan *Tweet)
+
 func WriteName(name string){
   myUsername = name
   db.Exec("INSERT INTO username (name) VALUES (?)",name)
@@ -56,23 +58,26 @@ func GetPeers() []string{
   return ips
 }
 
-func WriteTweet(tweet *Tweet){
-  stmt,perr := db.Prepare("SELECT * FROM tweets WHERE timestamp = ?")
-  if perr != nil{
-    fmt.Println("While SELECTing",perr)
+func WriteTweet(){
+  for {
+    tweet :=<-TweetWrite
+    stmt,perr := db.Prepare("SELECT * FROM tweets WHERE timestamp = ?")
+    if perr != nil{
+      fmt.Println("While SELECTing",perr)
+    }
+    eerr := stmt.Exec(tweet.Timestamp)
+    if eerr != nil {
+      fmt.Println("While running Exec()",eerr)
+    }
+    if !stmt.Next() { 
+      fmt.Println("Inserting:",tweet,"into database")
+      db.Exec("INSERT INTO tweets (author,message,timestamp) VALUES (?,?,?)",tweet.Name,tweet.Message,tweet.Timestamp)
+      messageChan <- []byte(tweet.Name + " said: " + tweet.Message + " [" + tweet.Timestamp + "]") //write client's message to webclient
+    } else {
+      fmt.Println("Skipping",tweet)
+    }
+    stmt.Finalize()
   }
-  eerr := stmt.Exec(tweet.Timestamp)
-  if eerr != nil {
-    fmt.Println("While running Exec()",eerr)
-  }
-  if !stmt.Next() { 
-    fmt.Println("Inserting:",tweet,"into database")
-    db.Exec("INSERT INTO tweets (author,message,timestamp) VALUES (?,?,?)",tweet.Name,tweet.Message,tweet.Timestamp)
-    messageChan <- []byte(tweet.Name + " said: " + tweet.Message + " [" + tweet.Timestamp + "]") //write client's message to webclient
-  } else {
-    fmt.Println("Skipping",tweet)
-  }
-  stmt.Finalize()
 }
 
 func SetupDatabase(){

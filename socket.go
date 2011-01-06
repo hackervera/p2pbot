@@ -35,7 +35,7 @@ func BroadcastPeers(){ //Try to connect to relays and broadcast peers
     //conn.SetReadTimeout(1e9)
     
     //fmt.Println(conn)
-    peerpacket := &Packet{"peers",peers,nil}
+    peerpacket := &Packet{Type:"peers",Peers:peers}
     var jsonbuf []byte
     jsonbuf,err = json.Marshal(peerpacket)
     if err != nil {
@@ -79,10 +79,10 @@ func TweetSender(){ //multiplexer for client connections, tweets, and relay's pe
   for {
     select {
     case connection :=<- Connections: //adds client connection to map
-      fmt.Println("adding",connection,"to connection store")
       conns[connection] = 1
-    case tweet :=<-TweetChan:
-      tweetpacket := &Packet{"tweet",nil,tweet}
+    case tweet :=<-TweetChan: // send tweets to clients
+      fmt.Println("incoming tweet")
+      tweetpacket := &Packet{Type:"tweet",Tweet:tweet}
       var jsonbuf []byte
       jsonbuf,err = json.Marshal(tweetpacket)
       if err != nil {
@@ -119,7 +119,8 @@ func ProcessUDP(){
       WritePeers(packet.Peers)
       
     } else if packet.Type == "tweet" {
-      WriteTweet(packet.Tweet)
+      //WriteTweet(packet.Tweet)
+      TweetWrite <- packet.Tweet
       
     }
   }
@@ -141,7 +142,7 @@ func Read(conn net.Conn){ // receives relay's net.Conn interface, Write() goes t
     if err != nil {
       fmt.Println("read error:",err)
     } else {
-      
+      fmt.Println("Relay(",conn.RemoteAddr(),")","just sent:",string(buf[0:size]))
       var packet *Packet
       err = json.Unmarshal(buf[0:size],&packet) // unmarshal json string from relay
       if err != nil {
@@ -153,7 +154,8 @@ func Read(conn net.Conn){ // receives relay's net.Conn interface, Write() goes t
         WritePeers(packet.Peers) 
       } else if packet.Type == "tweet" { // if relay sends us a tweet, write to db and broadcast to local webclient
         fmt.Println(conn.RemoteAddr(),"(RELAY) sent us some tweets",packet.Tweet)
-        WriteTweet(packet.Tweet)
+        //WriteTweet(packet.Tweet)
+        TweetWrite <- packet.Tweet
       }
       
     }
