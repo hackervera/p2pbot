@@ -19,7 +19,7 @@ func BroadcastPeers(){
       fmt.Println(err)
       continue
     }
-    conn.SetReadTimeout(1e9)
+    //conn.SetReadTimeout(1e9)
     
     //fmt.Println(conn)
     peerpacket := &Packet{"peers",peers,nil}
@@ -28,30 +28,10 @@ func BroadcastPeers(){
       fmt.Println(jerr)
     }
     conn.Write(jsonbuf)
-    var buf [1000]byte
-    size,readerr := conn.Read(buf[0:])
-    if readerr != nil {
-      fmt.Println("read error:",readerr)
-    } else {
-      
-      var packet *Packet
-      err = json.Unmarshal(buf[0:size],&packet)
-      if err != nil {
-        fmt.Println(err)
-        continue
-      }
-      if packet.Type == "peers" {
-        fmt.Println(packet.Peers)
-        WritePeers(packet.Peers) 
-      } else if packet.Type == "tweets" {
-        fmt.Println(packet.Tweet)
-        WriteTweet(packet.Tweet)
-      }
-      
-    }
+    
+    Federation <- conn
   }
 }
-
 
 type UDPresponse struct {
   N int
@@ -89,6 +69,7 @@ func UDPServer(){
 
 var Connections = make(chan *UDPresponse)
 var TweetChan = make(chan *Tweet)
+var Federation = make(chan net.Conn)
 
 func TweetSender(){
   var err os.Error
@@ -109,6 +90,8 @@ func TweetSender(){
         fmt.Println("Writing",string(jsonbuf),"to",response.Con)
         response.Con.WriteTo(jsonbuf,response.Addr)
       }
+    case peer :=<- Federation:
+      go Read(peer)
     }
   }
 }
@@ -144,3 +127,30 @@ func ProcessUDP(){
   }
 }
 
+func Read(conn net.Conn){
+  var buf [1000]byte
+  var err os.Error
+  var size int
+  for {
+    size,err = conn.Read(buf[0:])
+    if err != nil {
+      fmt.Println("read error:",err)
+    } else {
+      
+      var packet *Packet
+      err = json.Unmarshal(buf[0:size],&packet)
+      if err != nil {
+        fmt.Println(err)
+        continue
+      }
+      if packet.Type == "peers" {
+        fmt.Println(packet.Peers)
+        WritePeers(packet.Peers) 
+      } else if packet.Type == "tweets" {
+        fmt.Println(packet.Tweet)
+        WriteTweet(packet.Tweet)
+      }
+      
+    }
+  }
+}
