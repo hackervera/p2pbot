@@ -5,7 +5,7 @@ import (
   "fmt"
   "net"
   "json"
-  //"time"
+  "time"
   "os"
 )
 
@@ -74,6 +74,7 @@ var Federation = make(chan net.Conn)
 func TweetSender(){
   var err os.Error
   conns := make(map[*UDPresponse]int)
+  peers := make(map[net.Conn]int)
   for {
     select {
     case connection :=<- Connections:
@@ -90,7 +91,11 @@ func TweetSender(){
         fmt.Println("Writing",string(jsonbuf),"to",response.Con)
         response.Con.WriteTo(jsonbuf,response.Addr)
       }
+      for peer,_ := range peers {
+        peer.Write(jsonbuf)
+      }
     case peer :=<- Federation:
+      peers[peer] = 1
       go Read(peer)
     }
   }
@@ -131,6 +136,13 @@ func Read(conn net.Conn){
   var buf [1000]byte
   var err os.Error
   var size int
+  go func(){ 
+    for {
+      time.Sleep(5e9)
+      //fmt.Println("Sending ping to peers")
+      //conn.Write([]byte("ping"))
+    }
+  }()
   for {
     size,err = conn.Read(buf[0:])
     if err != nil {
