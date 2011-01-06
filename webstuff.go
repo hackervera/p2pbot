@@ -33,7 +33,7 @@ func hello(res http.ResponseWriter, req *http.Request) {
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
 <script language="javascript" type="text/javascript">
 
-  var wsUri = "ws://`+hostName+`:`+portNumber+`/socket";
+  var wsUri = "ws://"+window.location.hostname+":`+portNumber+`/socket";
   var output;
 
   function init()
