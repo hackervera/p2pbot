@@ -30,6 +30,59 @@ type PublicKey struct {
   E int
 }
 
+func SetupDatabase(){
+  db, _ = sqlite.Open("foo.db") 
+  db.Exec("CREATE TABLE tweets (author, message, timestamp)")
+  db.Exec("CREATE TABLE username (name)")
+  db.Exec("CREATE TABLE key (key)")
+  db.Exec("CREATE TABLE peers (ip)")
+  db.Exec("CREATE TABLE friends (mod, username)")
+  stmt, _ := db.Prepare("SELECT name FROM username")
+  stmt.Exec()
+  for {
+    if !stmt.Next() { 
+      fmt.Println("no key found in database, generating... this may take a second") 
+      key := GenKey()
+      username := Base64Encode(key.N.Bytes())
+      WriteName(string(username))
+      WriteKey(key)
+      break
+    }
+    var unmarshalled rsa.PrivateKey
+    var marshalled []byte
+    stmt.Scan(&marshalled)
+    json.Unmarshal(marshalled, unmarshalled)
+    myUsername = "foo"
+    fmt.Println("found username:",myUsername)
+    break
+  } 
+  stmt.Finalize()
+}
+
+func GetTweets() []Tweet{
+  stmt,perr := db.Prepare("SELECT * FROM tweets")
+  if perr != nil{
+    fmt.Println("While SELECTing",perr)
+  }
+  eerr := stmt.Exec()
+  if eerr != nil {
+    fmt.Println("While running Exec()",eerr)
+  }
+  var tweets []Tweet
+  for {
+    if !stmt.Next() { 
+      break
+    } else {
+      var author,message,timestamp string
+      stmt.Scan(&author,&message,&timestamp)
+      tweet := Tweet{Name:author,Message:message,Timestamp:timestamp}
+      tweets = append(tweets, tweet)
+    }
+  }
+  return tweets
+}
+
+
 func WriteName(name string){
   myUsername = name
   db.Exec("INSERT INTO username (name) VALUES (?)",name)
@@ -175,7 +228,7 @@ func WritePeers(peers []string){
   }
 }
 
-func GetPeers() []string{
+func GetRelays() []string{
   stmt,perr := db.Prepare("SELECT * FROM peers")
   if perr != nil{
     fmt.Println("While SELECTing",perr)
@@ -199,7 +252,7 @@ func GetPeers() []string{
 
 
 
-func WriteTweet(){
+func TweetWriter(){
   for {
     tweet :=<-TweetWrite
     stmt,perr := db.Prepare("SELECT * FROM tweets WHERE timestamp = ?")
@@ -218,7 +271,7 @@ func WriteTweet(){
     if !stmt.Next() { 
       fmt.Println("Inserting:",tweet,"into database")
       db.Exec("INSERT INTO tweets (author,message,timestamp) VALUES (?,?,?)",tweet.Name,tweet.Message,tweet.Timestamp)
-      TweetChan <- tweet
+      Tweets <- tweet
     } else {
       fmt.Println("Skipping",tweet)
     }
@@ -227,55 +280,4 @@ func WriteTweet(){
   }
 }
 
-func SetupDatabase(){
-  db, _ = sqlite.Open("foo.db") 
-  db.Exec("CREATE TABLE tweets (author, message, timestamp)")
-  db.Exec("CREATE TABLE username (name)")
-  db.Exec("CREATE TABLE key (key)")
-  db.Exec("CREATE TABLE peers (ip)")
-  db.Exec("CREATE TABLE friends (mod, username)")
-  stmt, _ := db.Prepare("SELECT name FROM username")
-  stmt.Exec()
-  for {
-    if !stmt.Next() { 
-      fmt.Println("no key found in database, generating... this may take a second") 
-      key := GenKey()
-      username := Base64Encode(key.N.Bytes())
-      WriteName(string(username))
-      WriteKey(key)
-      break
-    }
-    var unmarshalled rsa.PrivateKey
-    var marshalled []byte
-    stmt.Scan(&marshalled)
-    json.Unmarshal(marshalled, unmarshalled)
-    myUsername = "foo"
-    fmt.Println("found username:",myUsername)
-    break
-  } 
-  stmt.Finalize()
-}
-
-func GetTweets() []Tweet{
-  stmt,perr := db.Prepare("SELECT * FROM tweets")
-  if perr != nil{
-    fmt.Println("While SELECTing",perr)
-  }
-  eerr := stmt.Exec()
-  if eerr != nil {
-    fmt.Println("While running Exec()",eerr)
-  }
-  var tweets []Tweet
-  for {
-    if !stmt.Next() { 
-      break
-    } else {
-      var author,message,timestamp string
-      stmt.Scan(&author,&message,&timestamp)
-      tweet := Tweet{Name:author,Message:message,Timestamp:timestamp}
-      tweets = append(tweets, tweet)
-    }
-  }
-  return tweets
-}
 

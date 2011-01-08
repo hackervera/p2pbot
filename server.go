@@ -3,11 +3,10 @@ package main
 import (
   "http"
   //"fmt"
-  "flag"
+  //"flag"
   //"json"
 
 )
-
 
 //channels
 var PingResponse = make(chan string)
@@ -29,20 +28,12 @@ type Tweet struct{
   Sig []byte
 }
 
-
-  
 func main(){
   
   SetupDatabase()
-  go WriteTweet()
-  //go WholeThing()
-  go UDPServer()
-  go ProcessUDP()
+  go TweetWriter()
+  go ListenClients()
   go ircStuff()
-  go TweetSender()
-  flag.Parse()
-  
-  
 
   http.HandleFunc("/", Index)
   http.HandleFunc("/tweetgrabber", TweetGrabber)

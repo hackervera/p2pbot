@@ -9,136 +9,74 @@ import (
   "os"
 )
 
-var Connections = make(chan *UDPresponse)
-var TweetChan = make(chan *Tweet)
-var Federation = make(chan net.Conn)
-var UDPchan = make(chan *UDPresponse)
-var NoSelf = make(chan int) // Don't send data to ourselves and create feedback loop
-
-type UDPresponse struct {
-  Buf []byte
-  Con net.PacketConn
-  Addr net.Addr
-}
+var Tweets = make(chan *Tweet)
+var Relays = make(chan *net.UDPConn)
+var Clients = make(chan *net.UDPConn)
 
 
-
-func BroadcastPeers(){ //Try to connect to relays and broadcast peers
-  peers := GetPeers()
-  for _,peer := range peers {
-    fmt.Println("Dialing",peer,"...")
-    conn,err := net.Dial("udp","",peer+":7878")
+func DialRelays(){ 
+  relays := GetRelays()
+  for _,relay := range relays {
+    fmt.Println("Dialing",relay,"...")
+    UDPAddr,_ := net.ResolveUDPAddr(relay+":7878")
+    Local,_ := net.ResolveUDPAddr("")
+    conn,err := net.DialUDP("udp", Local,UDPAddr)
     if err != nil {
       fmt.Println(err)
-      continue // skip to next peer
+      continue // skip to next peer on connection error
     }
-    jsonbuf,err := json.Marshal(peers)
+    jsonbuf,err := json.Marshal(relays)
     if err != nil {
       fmt.Println(err)
     }
     conn.Write(jsonbuf) // send peers to relay
     
-    Federation <- conn // send relay's net.Conn *interface* to federation channel. Read by TweetSender()
+    Relays <- conn 
   }
   time.Sleep(10e9)
-  NoSelf <- 1
 }
 
-func UDPServer(){ // This function makes the bot act as a relay. It means its a public interface.
-  <-NoSelf
-  c,err := net.ListenPacket("udp", "0.0.0.0:7878") // c is a net.PacketConn *interface* for the client connecting to this relay
+func ListenClients(){ 
+  UDPAddr,_ := net.ResolveUDPAddr("0.0.0.0:7878")
+  c,err := net.ListenUDP("udp", UDPAddr) 
+  var buf [10000]byte
   if err != nil {
     fmt.Println("Error while reading from UDP:",err)
     os.Exit(1)
   }
- 
-  var buf [10000]byte
+  
   for {
-    
-    var n int
-    var addr net.Addr // *interface* Network() network name, String() string address
-    n, addr, err = c.ReadFrom(buf[0:])
+    n,_,_ := c.ReadFrom(buf[0:])
     if err != nil {
       fmt.Println("Error while reading from UDP:",err)
       os.Exit(1)
     }
-
-    res := &UDPresponse{buf[0:n],c,addr}
-    UDPchan <- res // send client's connection information to UDPchan in ProcessUDP()
+    fmt.Println("Incoming: ", buf[0:n])
+    Clients <- c
   }
 }
 
-
-func TweetSender(){ //multiplexer for client connections, tweets, and relay's peers
-  conns := make(map[*UDPresponse]int)
-  peers := make(map[net.Conn]int)
+func ConnectionMonitor(){ //multiplexer for client connections, tweets, and relay's peers
+  conns := make(map[*net.UDPConn]string)
   for {
     select {
-    case connection :=<- Connections: //adds client connection to map
-      conns[connection] = 1
-    case tweet :=<-TweetChan: // send tweets to clients
+    case connection :=<- Relays: 
+      conns[connection] = "relay"
+    case connection :=<- Clients:
+      conns[connection] = "client"
+    case tweet :=<-Tweets: // send tweets to connections
       fmt.Println("incoming tweet")
       jsonbuf,err := json.Marshal(tweet)
       if err != nil {
         fmt.Println(err)
       }
-      for response,_ := range conns {
-        fmt.Println("Writing",string(jsonbuf),"to",response.Con)
-        response.Con.WriteTo(jsonbuf,response.Addr)
+      for conn,t := range conns {
+        if t == "relay" {
+          conn.Write(jsonbuf)
+        } else {
+          conn.WriteTo(jsonbuf, conn.RemoteAddr())
+        }
       }
-      for peer,_ := range peers {
-        peer.Write(jsonbuf)
-      }
-    case peer :=<- Federation: // receive relay's net.Conn interface from BroadcastPeers()
-      peers[peer] = 1 // add relay net.Conn interface to peers map
-      go Read(peer) // waits for data to be written to client from relay
-    }
-  }
-}
-
-func ProcessUDP(){
-   
-  for {
-    reply :=<- UDPchan // client's connection information
-    Connections <- reply //send client's connection information to Connections in TweetSender()
-    buf := reply.Buf
-    fmt.Println("Client(",reply.Addr,")","just sent:",string(buf))
-    
-    var packet interface{}
-    err := json.Unmarshal(buf,&packet) // unmarshal client's sent json to Packet
-    if err != nil {
-      fmt.Println(err)
-      continue
-    }
-      
-  }
-}
-
-
-func Read(conn net.Conn){ // receives relay's net.Conn interface, Write() goes to relay, Read() reads from relay
-  var buf [1000]byte
-  var err os.Error
-  var size int
-  go func(){
-    for {
-      time.Sleep(5e9)
-      //fmt.Println("Sending ping to peers")
-      //conn.Write([]byte("ping"))
-    }
-  }()
-  for {
-    size,err = conn.Read(buf[0:]) //block until relay sends us data
-    if err != nil {
-      fmt.Println("read error:",err)
-    } else {
-      fmt.Println("Relay(",conn.RemoteAddr(),")","just sent:",string(buf[0:size]))
-      var packet interface{}
-      err = json.Unmarshal(buf[0:size],&packet) // unmarshal json string from relay
-      if err != nil {
-        fmt.Println(err)
-        continue //skip until next read from relay
-      }
-      
     }
   }
 }

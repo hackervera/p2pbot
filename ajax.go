@@ -3,7 +3,6 @@ import (
   "http"
   "io/ioutil"
   "regexp"
-  "fmt"
 )
 
 func Index(w http.ResponseWriter, r *http.Request){
@@ -21,7 +20,6 @@ func TweetGrabber(w http.ResponseWriter, r *http.Request){
 func InsertTweet(w http.ResponseWriter, r *http.Request){
   query,_ := http.ParseQuery(r.URL.RawQuery)
   signature := Sign([]byte(query["message"][0]))
-  fmt.Println("Signature:",string(signature))
   tweet := &Tweet{Name:query["name"][0],Message:query["message"][0],Timestamp:query["date"][0],Sig:signature}
   TweetWrite <- tweet
   w.Write([]byte(`"looks good"`))

@@ -20,13 +20,11 @@ func ircStuff() {
   irccon.AddCallback("JOIN",func(e *irc.IRCEvent){
     fmt.Println(e)
     if nick == e.Nick {
-      irccon.Privmsg("#bootstrap",nick + " has arrived!")
-      //irccon.Privmsg("#bootstrap","PING")
       go irccon.SendRaw("who #bootstrap")
       
       time.Sleep(5e9)
       WritePeers(peers)
-      go BroadcastPeers()
+      go DialRelays()
       
     }
   })
