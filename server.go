@@ -32,7 +32,6 @@ func main(){
   
   SetupDatabase()
   go TweetWriter()
-  go ListenClients()
   go ircStuff()
 
   http.HandleFunc("/", Index)

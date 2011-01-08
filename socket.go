@@ -34,6 +34,7 @@ func DialRelays(){
     Relays <- conn 
   }
   time.Sleep(10e9)
+  go ListenClients()
 }
 
 func ListenClients(){ 
@@ -51,7 +52,7 @@ func ListenClients(){
       fmt.Println("Error while reading from UDP:",err)
       os.Exit(1)
     }
-    fmt.Println("Incoming: ", buf[0:n])
+    fmt.Println("Incoming: ", string(buf[0:n]))
     Clients <- c
   }
 }
