@@ -150,11 +150,12 @@ func WriteTweet(){
     if !stmt.Next() { 
       fmt.Println("Inserting:",tweet,"into database")
       db.Exec("INSERT INTO tweets (author,message,timestamp) VALUES (?,?,?)",tweet.Name,tweet.Message,tweet.Timestamp)
+      TweetChan <- tweet
     } else {
       fmt.Println("Skipping",tweet)
     }
     stmt.Finalize()
-    TweetChan <- tweet
+    
   }
 }
 
