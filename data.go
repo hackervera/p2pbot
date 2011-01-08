@@ -4,6 +4,8 @@ import (
   "fmt"
   "json"
   "crypto/rsa"
+  "os"
+  "big"
 )
 
 var db *sqlite.Conn
@@ -11,18 +13,22 @@ var db *sqlite.Conn
 var TweetWrite = make(chan *Tweet)
 var History []Tweet
 
-type PQDN struct {
-  P string
-  Q string
-  D string
-  N string
-}
 
 type Modder struct {
   Mod string
   Name string
 }
 
+type MyKey struct {
+  PublicKey
+  D string
+  P,Q string
+}
+
+type PublicKey struct {
+  N string
+  E int
+}
 
 func WriteName(name string){
   myUsername = name
@@ -62,8 +68,14 @@ func GetFriends() []byte {
   return friendsjson
 }
 
-func WriteKey(key string){
-  db.Exec("INSERT INTO key (key) VALUES (?)",key)
+func WriteKey(key *rsa.PrivateKey){
+  mykey := &MyKey{D:key.D.String(),P:key.P.String(),Q:key.Q.String(), PublicKey:PublicKey{N:key.PublicKey.N.String(),E:key.PublicKey.E}}
+  jsonkey,err := json.Marshal(mykey)
+  if err != nil {
+    fmt.Println(err)
+    os.Exit(1)
+  }
+  db.Exec("INSERT INTO key (key) VALUES (?)",jsonkey)
 }
 
 func GetUsername() string{
@@ -81,6 +93,55 @@ func GetUsername() string{
   } 
   return ""
 }
+
+func GetKey() rsa.PrivateKey {
+  
+  var placeholder []byte
+  var mykey MyKey
+  var key rsa.PrivateKey
+  stmt,err := db.Prepare("SELECT key FROM key")
+  if err != nil{
+    fmt.Println("While SELECTing",err)
+  }
+  err = stmt.Exec()
+  if err != nil {
+    fmt.Println("While running Exec()",err)
+  }
+  for {
+    if !stmt.Next() { 
+      break
+    } else {
+      
+      stmt.Scan(&placeholder)
+      //fmt.Println("Getting key:",string(placeholder))
+      err = json.Unmarshal(placeholder,&mykey)
+      if err != nil {
+        fmt.Println(err)
+        os.Exit(1)
+      }
+      d := big.NewInt(0)
+      p := big.NewInt(0)
+      q := big.NewInt(0)
+      n := big.NewInt(0)
+      d.SetString(mykey.D,10)
+      p.SetString(mykey.P,10)
+      q.SetString(mykey.Q,10)
+      n.SetString(mykey.PublicKey.N,10)
+      
+      pubkey := rsa.PublicKey{N:n, E:mykey.PublicKey.E}
+      key = rsa.PrivateKey{D:d,P:p,Q:q,PublicKey:pubkey}
+      //fmt.Println("KEY:",key)
+      err = key.Validate()
+      if err != nil {
+        fmt.Println("key errors:",err)
+      } else {
+        fmt.Println("key looks valid")
+      }
+    }
+  }
+  return key
+}
+
 
 func GetHistory() []byte {
   tweets := GetTweets()
@@ -136,10 +197,17 @@ func GetPeers() []string{
   return ips
 }
 
+
+
 func WriteTweet(){
   for {
     tweet :=<-TweetWrite
     stmt,perr := db.Prepare("SELECT * FROM tweets WHERE timestamp = ?")
+    test := Verify([]byte(tweet.Message), tweet.Sig)
+    if test != true {
+      fmt.Println("not verified")
+      break
+    }
     if perr != nil{
       fmt.Println("While SELECTing",perr)
     }
@@ -172,11 +240,9 @@ func SetupDatabase(){
     if !stmt.Next() { 
       fmt.Println("no key found in database, generating... this may take a second") 
       key := GenKey()
-      JsonKey,_ := json.Marshal(&PQDN{key.P.String(),key.Q.String(),key.D.String(),key.PublicKey.N.String()})
-      fmt.Println(JsonKey)
       username := Base64Encode(key.N.Bytes())
-      WriteKey(string(JsonKey))
       WriteName(string(username))
+      WriteKey(key)
       break
     }
     var unmarshalled rsa.PrivateKey
@@ -206,7 +272,7 @@ func GetTweets() []Tweet{
     } else {
       var author,message,timestamp string
       stmt.Scan(&author,&message,&timestamp)
-      tweet := Tweet{author,message,timestamp}
+      tweet := Tweet{Name:author,Message:message,Timestamp:timestamp}
       tweets = append(tweets, tweet)
     }
   }

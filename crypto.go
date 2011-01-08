@@ -5,12 +5,41 @@ import "crypto/block"
 import "crypto/aes"
 import "bytes"
 import "encoding/base64"
+import "crypto/sha256"
+import "fmt"
 
 import "crypto/rsa"
 
 func GenKey() (key *rsa.PrivateKey){
   key,_ = rsa.GenerateKey(rand.Reader, 2048)
   return key
+}
+
+func Sign(message []byte) []byte {
+  
+  key := GetKey()
+  hasher := sha256.New()
+  hasher.Write(message)
+  hash := hasher.Sum()
+  sig,err := rsa.SignPKCS1v15(rand.Reader, &key, rsa.HashSHA256, hash)
+  if err != nil {
+    fmt.Println(err)
+  }
+  return sig
+}
+
+func Verify(message []byte, sig []byte) bool{
+  key := GetKey()
+  pub := key.PublicKey
+  hasher := sha256.New()
+  hasher.Write(message)
+  hash := hasher.Sum()
+
+  test := rsa.VerifyPKCS1v15(&pub, rsa.HashSHA256, hash, sig)
+  if test != nil {
+    return false
+  }
+  return true
 }
 
 func Encrypt(data []byte, key *rsa.PublicKey)(iv []byte, etext []byte, ckey []byte){ 
@@ -39,3 +68,11 @@ func Base64Encode(data []byte) []byte{
   base64.URLEncoding.Encode(EncodedText[0:n], data)
   return EncodedText[0:n]
 }
+
+func Base64Decode(data []byte) []byte{
+  var DecodedText [10000]byte
+  n := base64.URLEncoding.DecodedLen(len(data))
+  base64.URLEncoding.Decode(DecodedText[0:n], data)
+  return DecodedText[0:n]
+}
+

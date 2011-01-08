@@ -32,12 +32,7 @@ func BroadcastPeers(){ //Try to connect to relays and broadcast peers
       fmt.Println(err)
       continue // skip to next peer
     }
-    //conn.SetReadTimeout(1e9)
-    
-    //fmt.Println(conn)
-    peerpacket := &Packet{Type:"peers",Peers:peers}
-    var jsonbuf []byte
-    jsonbuf,err = json.Marshal(peerpacket)
+    jsonbuf,err := json.Marshal(peers)
     if err != nil {
       fmt.Println(err)
     }
@@ -48,8 +43,6 @@ func BroadcastPeers(){ //Try to connect to relays and broadcast peers
   time.Sleep(10e9)
   NoSelf <- 1
 }
-
-
 
 func UDPServer(){ // This function makes the bot act as a relay. It means its a public interface.
   <-NoSelf
@@ -77,7 +70,6 @@ func UDPServer(){ // This function makes the bot act as a relay. It means its a 
 
 
 func TweetSender(){ //multiplexer for client connections, tweets, and relay's peers
-  var err os.Error
   conns := make(map[*UDPresponse]int)
   peers := make(map[net.Conn]int)
   for {
@@ -86,9 +78,7 @@ func TweetSender(){ //multiplexer for client connections, tweets, and relay's pe
       conns[connection] = 1
     case tweet :=<-TweetChan: // send tweets to clients
       fmt.Println("incoming tweet")
-      tweetpacket := &Packet{Type:"tweet",Tweet:tweet}
-      var jsonbuf []byte
-      jsonbuf,err = json.Marshal(tweetpacket)
+      jsonbuf,err := json.Marshal(tweet)
       if err != nil {
         fmt.Println(err)
       }
@@ -114,32 +104,16 @@ func ProcessUDP(){
     buf := reply.Buf
     fmt.Println("Client(",reply.Addr,")","just sent:",string(buf))
     
-    var packet *Packet
+    var packet interface{}
     err := json.Unmarshal(buf,&packet) // unmarshal client's sent json to Packet
     if err != nil {
       fmt.Println(err)
       continue
     }
-    if packet.Type == "peers" {
-      WritePeers(packet.Peers)
       
-    } else if packet.Type == "tweet" {
-      //WriteTweet(packet.Tweet)
-      TweetWrite <- packet.Tweet
-      
-    }
   }
 }
 
-func WholeThing(){ // periodically send entire database
-  for {
-    time.Sleep(10e9)
-    tweets := GetTweets()
-    for _,tweet := range tweets {
-      TweetChan <- &tweet
-    }
-  }
-}
 
 func Read(conn net.Conn){ // receives relay's net.Conn interface, Write() goes to relay, Read() reads from relay
   var buf [1000]byte
@@ -158,19 +132,11 @@ func Read(conn net.Conn){ // receives relay's net.Conn interface, Write() goes t
       fmt.Println("read error:",err)
     } else {
       fmt.Println("Relay(",conn.RemoteAddr(),")","just sent:",string(buf[0:size]))
-      var packet *Packet
+      var packet interface{}
       err = json.Unmarshal(buf[0:size],&packet) // unmarshal json string from relay
       if err != nil {
         fmt.Println(err)
         continue //skip until next read from relay
-      }
-      if packet.Type == "peers" { //if relay sends us a "peers" type json, write to database
-        fmt.Println(conn.RemoteAddr(),"(RELAY) sent us some peers",packet.Peers)
-        WritePeers(packet.Peers) 
-      } else if packet.Type == "tweet" { // if relay sends us a tweet, write to db and broadcast to local webclient
-        fmt.Println(conn.RemoteAddr(),"(RELAY) sent us some tweets",packet.Tweet)
-        //WriteTweet(packet.Tweet)
-        TweetWrite <- packet.Tweet
       }
       
     }
