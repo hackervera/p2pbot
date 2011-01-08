@@ -154,6 +154,7 @@ func WriteTweet(){
       fmt.Println("Skipping",tweet)
     }
     stmt.Finalize()
+    TweetChan <- tweet
   }
 }
 

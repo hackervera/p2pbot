@@ -9,6 +9,7 @@
 <script>
 $("#msg-body").focus();
 function getAddressBook(){
+  console.log("address book called");
   $.getJSON("/addressbook", function(json){
     names = {};
     
@@ -18,13 +19,10 @@ function getAddressBook(){
       namelist.push(json[i].Mod);
     }
     var counter = 0;
-    console.log("foo")
     for (i in names){
       counter++;
     }
     names.length = counter;
-    console.log(namelist);
-    console.log(names);
     pullTweets();
   });
 }
@@ -40,7 +38,6 @@ function pullTweets(){
       } else {
         $('#json').prepend("<p>"+names[tweet.Name]+" says " + tweet.Message + " at " + tweet.Timestamp+"</p>");
       }
-      //console.log(tweet);
     }
   });
 }
@@ -49,7 +46,7 @@ function insertTweet(){
   var date = new Date();
   date = date.toString()
   $.getJSON("/insert",{name:'NAME', message:message, date:date});
-  setTimeout(getAddressBook(),2000);
+  setTimeout(getAddressBook,1000);
   $("#msg-body").val("");
 }
 function show(i){
@@ -61,11 +58,17 @@ function hide(i){
 function addName(mod){
   //alert(name);
   username = prompt('What would you like to add this name as?');
-  console.log(username);
   $.getJSON("/addfriend",{mod:mod,username:username});
-  setTimeout(getAddressBook(),4000);
+  setTimeout(getAddressBook,1000);
   $("#msg-body").focus();
 }
 
-getAddressBook();
+
+function startTimer(){
+  getAddressBook();
+  setTimeout(startTimer,10000);
+  
+}
+
+startTimer();
 </script>
