@@ -33,6 +33,7 @@ func main(){
   SetupDatabase()
   go TweetWriter()
   go ircStuff()
+  go ConnectionMonitor()
 
   http.HandleFunc("/", Index)
   http.HandleFunc("/tweetgrabber", TweetGrabber)

@@ -74,9 +74,9 @@ func ConnectionMonitor(){ //multiplexer for client connections, tweets, and rela
       for conn,t := range conns {
         if t == "relay" {
           conn.Write(jsonbuf)
-        } else {
+        } else if t== "client" {
           conn.WriteTo(jsonbuf, conn.RemoteAddr())
-        }
+        } 
       }
     }
   }

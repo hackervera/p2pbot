@@ -99,7 +99,7 @@ func GetFriends() []byte {
   for {
     var mod,username string
     if !stmt.Next() { 
-      fmt.Println("Unknown Username")
+      //fmt.Println("Unknown Username")
       //return []byte("")
       break
     }
@@ -129,22 +129,6 @@ func WriteKey(key *rsa.PrivateKey){
     os.Exit(1)
   }
   db.Exec("INSERT INTO key (key) VALUES (?)",jsonkey)
-}
-
-func GetUsername() string{
-  stmt, _ := db.Prepare("SELECT name FROM username")
-  stmt.Exec()
-  var username string
-  for {
-    if !stmt.Next() { 
-      fmt.Println("Unknown Username")
-      break
-    }
-    stmt.Scan(&username)
-    stmt.Finalize()
-    return username
-  } 
-  return ""
 }
 
 func GetKey() rsa.PrivateKey {
@@ -188,12 +172,29 @@ func GetKey() rsa.PrivateKey {
       if err != nil {
         fmt.Println("key errors:",err)
       } else {
-        fmt.Println("key looks valid")
+        //fmt.Println("key looks valid")
       }
     }
   }
   return key
 }
+
+func GetUsername() string{
+  stmt, _ := db.Prepare("SELECT name FROM username")
+  stmt.Exec()
+  var username string
+  for {
+    if !stmt.Next() { 
+      fmt.Println("Unknown Username")
+      break
+    }
+    stmt.Scan(&username)
+    stmt.Finalize()
+    return username
+  } 
+  return ""
+}
+
 
 
 func GetHistory() []byte {
@@ -254,12 +255,13 @@ func GetRelays() []string{
 
 func TweetWriter(){
   for {
+    fmt.Println("Waiting for next tweet")
     tweet :=<-TweetWrite
     stmt,perr := db.Prepare("SELECT * FROM tweets WHERE timestamp = ?")
     test := Verify([]byte(tweet.Message), tweet.Sig)
     if test != true {
       fmt.Println("not verified")
-      break
+      continue
     }
     if perr != nil{
       fmt.Println("While SELECTing",perr)
@@ -272,6 +274,7 @@ func TweetWriter(){
       fmt.Println("Inserting:",tweet,"into database")
       db.Exec("INSERT INTO tweets (author,message,timestamp) VALUES (?,?,?)",tweet.Name,tweet.Message,tweet.Timestamp)
       Tweets <- tweet
+      fmt.Println("successfully sent tweet on wire")
     } else {
       fmt.Println("Skipping",tweet)
     }
