@@ -9,17 +9,36 @@
 <script>
 $("#msg-body").focus();
 function getAddressBook(){
-  $.getJSON("/addressbook", function(json){});
+  $.getJSON("/addressbook", function(json){
+    names = {};
+    
+    namelist = [];
+    for (i in json){
+      names[json[i].Mod] = json[i].Name;
+      namelist.push(json[i].Mod);
+    }
+    var counter = 0;
+    console.log("foo")
+    for (i in names){
+      counter++;
+    }
+    names.length = counter;
+    console.log(namelist);
+    console.log(names);
+    pullTweets();
+  });
 }
 function pullTweets(){
   $("#json").html("");
   $.getJSON("/tweetgrabber",function(json){
     for (i in json){
       var tweet = json[i]
-      if (tweet.Name != "tyler"){
+      if (!tweet.Name in names || names.length < 1){
           
-        $('#json').prepend("<p><a href='#' onClick='addName(\""+tweet.Name+"\")' onMouseOver='show("+i+");' onMouseOut='hide("+i+")'>Unknown</a> says " + tweet.Message + " at " + tweet.Timestamp+"</p>"+
-          "<div id='tweet-"+i+"' style='display:none'><b>Click link to add to addressbook:</b> "+tweet.Name+" </div>");
+        $('#json').prepend("<p><a href='#' onClick='addName(\""+tweet.Name+"\")' onMouseOver='show("+i+");' onMouseOut='hide("+i+")'>Unknown</a> says " + 
+        tweet.Message + " at " + tweet.Timestamp+"</p>"+"<div id='tweet-"+i+ "' style='display:none'><b>Click link to add to addressbook:</b> "+tweet.Name+" </div>");
+      } else {
+        $('#json').prepend("<p>"+names[tweet.Name]+" says " + tweet.Message + " at " + tweet.Timestamp+"</p>");
       }
       //console.log(tweet);
     }
@@ -30,7 +49,7 @@ function insertTweet(){
   var date = new Date();
   date = date.toString()
   $.getJSON("/insert",{name:'NAME', message:message, date:date});
-  setTimeout(pullTweets(),2000);
+  setTimeout(getAddressBook(),2000);
   $("#msg-body").val("");
 }
 function show(i){
@@ -44,8 +63,9 @@ function addName(mod){
   username = prompt('What would you like to add this name as?');
   console.log(username);
   $.getJSON("/addfriend",{mod:mod,username:username});
-  setTimeout(pullTweets(),2000);
+  setTimeout(getAddressBook(),4000);
   $("#msg-body").focus();
 }
-pullTweets();
+
+getAddressBook();
 </script>

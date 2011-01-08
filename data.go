@@ -18,6 +18,11 @@ type PQDN struct {
   N string
 }
 
+type Modder struct {
+  Mod string
+  Name string
+}
+
 
 func WriteName(name string){
   myUsername = name
@@ -29,25 +34,31 @@ func WriteFriend(mod string, username string){
 }
 
 func GetFriends() []byte {
-  friends := make(map[string]string)
+  var friends []Modder
   stmt, _ := db.Prepare("SELECT mod,username FROM friends")
   stmt.Exec()
   for {
     var mod,username string
     if !stmt.Next() { 
       fmt.Println("Unknown Username")
-      return []byte("")
+      //return []byte("")
       break
     }
     stmt.Scan(&mod,&username)
-    friends[mod] = username
+    fmt.Println("got username",username)
+    
+    friend := &Modder{mod,username}
+    friends = append(friends, *friend)
     
   } 
   stmt.Finalize()
   friendsjson,err := json.Marshal(friends)
+  
   if err != nil {
     fmt.Println(err)
   }
+  //fmt.Println("friends:",friends)
+  //fmt.Println("friendjson:",friendsjson)
   return friendsjson
 }
 
