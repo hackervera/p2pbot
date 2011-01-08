@@ -9,6 +9,7 @@ import (
 var db *sqlite.Conn
 
 var TweetWrite = make(chan *Tweet)
+var History []Tweet
 
 type PQDN struct {
   P string
@@ -16,6 +17,7 @@ type PQDN struct {
   D string
   N string
 }
+
 
 func WriteName(name string){
   myUsername = name
@@ -27,7 +29,14 @@ func WriteKey(key string){
 }
 
 
-
+func GetHistory() []byte {
+  tweets := GetTweets()
+  TweetsJSON,err := json.Marshal(tweets)
+  if err != nil {
+    fmt.Println(err)
+  }
+  return TweetsJSON
+}
 
 func WritePeers(peers []string){
   
@@ -88,7 +97,6 @@ func WriteTweet(){
     if !stmt.Next() { 
       fmt.Println("Inserting:",tweet,"into database")
       db.Exec("INSERT INTO tweets (author,message,timestamp) VALUES (?,?,?)",tweet.Name,tweet.Message,tweet.Timestamp)
-      messageChan <- []byte(tweet.Name + " said: " + tweet.Message + " [" + tweet.Timestamp + "]") //write client's message to webclient
     } else {
       fmt.Println("Skipping",tweet)
     }

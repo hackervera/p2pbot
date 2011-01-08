@@ -1,0 +1,16 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+<div>
+  <form>
+    <input type='text'>
+  </form>
+</div>
+<div id='json'>Yo</div>
+<script>
+$.getJSON("/tweetgrabber",function(json){
+  for (i in json){
+    var tweet = json[i]
+    $('#json').prepend("<p>"+tweet.Name + " says " + tweet.Message + " at " + tweet.Timestamp+"</p>");
+    console.log(tweet);
+  }
+});
+</script>
