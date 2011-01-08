@@ -53,7 +53,7 @@ type Tweet struct{
 
 func Subscribe(ws *websocket.Conn){ //called from main() on every websocket opened, also monitors input from webclient
   subscriptionChan <- subscription{ws, true} // add this channel to multiplexer
-  buf := make([]byte, 256)
+  buf := make([]byte, 10000)
   for {
     n, err := ws.Read(buf)
     if err != nil {

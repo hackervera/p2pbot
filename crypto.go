@@ -27,7 +27,15 @@ func Encrypt(data []byte, key *rsa.PublicKey)(iv []byte, etext []byte, ckey []by
   EncryptedKey,_ := rsa.EncryptPKCS1v15(rand.Reader, key, SessionKey[0:])
   BlockWriter.Write(data) // Pass data through Encryptor
   WriteBuf.Read(CryptedText) // Read Encrypted data from buffer to byte slice
+  //n := base64.URLEncoding.EncodedLen(len(CryptedText)))
   base64.URLEncoding.Encode(EncodedText, CryptedText)
 
   return IVBuf[0:], EncodedText, EncryptedKey
+}
+
+func Base64Encode(data []byte) []byte{
+  var EncodedText [10000]byte
+  n := base64.URLEncoding.EncodedLen(len(data))
+  base64.URLEncoding.Encode(EncodedText[0:n], data)
+  return EncodedText[0:n]
 }

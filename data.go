@@ -2,16 +2,32 @@ package main
 import (
   sqlite "gosqlite.googlecode.com/hg/sqlite"
   "fmt"
+  "json"
+  "crypto/rsa"
 )
 
 var db *sqlite.Conn
 
 var TweetWrite = make(chan *Tweet)
 
+type PQDN struct {
+  P string
+  Q string
+  D string
+  N string
+}
+
 func WriteName(name string){
   myUsername = name
   db.Exec("INSERT INTO username (name) VALUES (?)",name)
 }
+
+func WriteKey(key string){
+  db.Exec("INSERT INTO key (key) VALUES (?)",key)
+}
+
+
+
 
 func WritePeers(peers []string){
   
@@ -84,15 +100,27 @@ func SetupDatabase(){
   db, _ = sqlite.Open("foo.db") 
   db.Exec("CREATE TABLE tweets (author, message, timestamp)")
   db.Exec("CREATE TABLE username (name)")
+  db.Exec("CREATE TABLE key (key)")
   db.Exec("CREATE TABLE peers (ip)")
+  db.Exec("CREATE TABLE friends (mod, username)")
   stmt, _ := db.Prepare("SELECT name FROM username")
   stmt.Exec()
   for {
     if !stmt.Next() { 
-      fmt.Println("no usernames found") 
+      fmt.Println("no key found in database, generating... this may take a second") 
+      key := GenKey()
+      JsonKey,_ := json.Marshal(&PQDN{key.P.String(),key.Q.String(),key.D.String(),key.PublicKey.N.String()})
+      fmt.Println(JsonKey)
+      username := Base64Encode(key.N.Bytes())
+      WriteKey(string(JsonKey))
+      WriteName(string(username))
       break
     }
-    stmt.Scan(&myUsername)
+    var unmarshalled rsa.PrivateKey
+    var marshalled []byte
+    stmt.Scan(&marshalled)
+    json.Unmarshal(marshalled, unmarshalled)
+    myUsername = "foo"
     fmt.Println("found username:",myUsername)
     break
   } 
