@@ -13,7 +13,7 @@ var Connections = make(chan *UDPresponse)
 var TweetChan = make(chan *Tweet)
 var Federation = make(chan net.Conn)
 var UDPchan = make(chan *UDPresponse)
-
+var NoSelf = make(chan int) // Don't send data to ourselves and create feedback loop
 
 type UDPresponse struct {
   Buf []byte
@@ -45,19 +45,23 @@ func BroadcastPeers(){ //Try to connect to relays and broadcast peers
     
     Federation <- conn // send relay's net.Conn *interface* to federation channel. Read by TweetSender()
   }
+  time.Sleep(10e9)
+  NoSelf <- 1
 }
 
 
 
 func UDPServer(){ // This function makes the bot act as a relay. It means its a public interface.
+  <-NoSelf
   c,err := net.ListenPacket("udp", "0.0.0.0:7878") // c is a net.PacketConn *interface* for the client connecting to this relay
   if err != nil {
     fmt.Println("Error while reading from UDP:",err)
     os.Exit(1)
   }
-
+ 
   var buf [10000]byte
   for {
+    
     var n int
     var addr net.Addr // *interface* Network() network name, String() string address
     n, addr, err = c.ReadFrom(buf[0:])
@@ -103,6 +107,7 @@ func TweetSender(){ //multiplexer for client connections, tweets, and relay's pe
 }
 
 func ProcessUDP(){
+   
   for {
     reply :=<- UDPchan // client's connection information
     Connections <- reply //send client's connection information to Connections in TweetSender()

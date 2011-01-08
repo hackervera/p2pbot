@@ -99,7 +99,7 @@ func main(){
   
   SetupDatabase()
   go WriteTweet()
-  go WholeThing()
+  //go WholeThing()
   go UDPServer()
   go ProcessUDP()
   go Multiplex()
