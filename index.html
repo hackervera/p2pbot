@@ -31,7 +31,7 @@ function pullTweets(){
   $.getJSON("/tweetgrabber",function(json){
     for (i in json){
       var tweet = json[i]
-      if (!tweet.Name in names || names.length < 1){
+      if (!tweet.Name in names){
           
         $('#json').prepend("<p><a href='#' onClick='addName(\""+tweet.Name+"\")' onMouseOver='show("+i+");' onMouseOut='hide("+i+")'>Unknown</a> says " + 
         tweet.Message + " at " + tweet.Timestamp+"</p>"+"<div id='tweet-"+i+ "' style='display:none'><b>Click link to add to addressbook:</b> "+tweet.Name+" </div>");
