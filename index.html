@@ -1,16 +1,51 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
 <div>
-  <form>
-    <input type='text'>
+  <form onSubmit='insertTweet(); return false'>
+    <input type='text' id='msg-body'>
+    <input type='submit' value='send'>
   </form>
 </div>
-<div id='json'>Yo</div>
+<div id='json'></div>
 <script>
-$.getJSON("/tweetgrabber",function(json){
-  for (i in json){
-    var tweet = json[i]
-    $('#json').prepend("<p>"+tweet.Name + " says " + tweet.Message + " at " + tweet.Timestamp+"</p>");
-    console.log(tweet);
-  }
-});
+$("#msg-body").focus();
+function getAddressBook(){
+  $.getJSON("/addressbook", function(json){});
+}
+function pullTweets(){
+  $("#json").html("");
+  $.getJSON("/tweetgrabber",function(json){
+    for (i in json){
+      var tweet = json[i]
+      if (tweet.Name != "tyler"){
+          
+        $('#json').prepend("<p><a href='#' onClick='addName(\""+tweet.Name+"\")' onMouseOver='show("+i+");' onMouseOut='hide("+i+")'>Unknown</a> says " + tweet.Message + " at " + tweet.Timestamp+"</p>"+
+          "<div id='tweet-"+i+"' style='display:none'><b>Click link to add to addressbook:</b> "+tweet.Name+" </div>");
+      }
+      //console.log(tweet);
+    }
+  });
+}
+function insertTweet(){
+  var message = $("#msg-body").val();
+  var date = new Date();
+  date = date.toString()
+  $.getJSON("/insert",{name:'NAME', message:message, date:date});
+  setTimeout(pullTweets(),2000);
+  $("#msg-body").val("");
+}
+function show(i){
+  $("#tweet-"+i).show();
+}
+function hide(i){
+  $("#tweet-"+i).hide();
+}
+function addName(mod){
+  //alert(name);
+  username = prompt('What would you like to add this name as?');
+  console.log(username);
+  $.getJSON("/addfriend",{mod:mod,username:username});
+  setTimeout(pullTweets(),2000);
+  $("#msg-body").focus();
+}
+pullTweets();
 </script>

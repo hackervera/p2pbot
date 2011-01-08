@@ -66,5 +66,7 @@ func main(){
   http.HandleFunc("/", Index)
   http.HandleFunc("/tweetgrabber", TweetGrabber)
   http.HandleFunc("/insert", InsertTweet)
+  http.HandleFunc("/addressbook", AddressBook)
+  http.HandleFunc("/addfriend", AddFriend)
   http.ListenAndServe(":9999", nil)
 }

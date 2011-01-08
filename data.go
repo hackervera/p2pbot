@@ -24,10 +24,52 @@ func WriteName(name string){
   db.Exec("INSERT INTO username (name) VALUES (?)",name)
 }
 
+func WriteFriend(mod string, username string){
+  db.Exec("INSERT INTO friends (mod,username) VALUES (?,?)",mod,username)
+}
+
+func GetFriends() []byte {
+  friends := make(map[string]string)
+  stmt, _ := db.Prepare("SELECT mod,username FROM friends")
+  stmt.Exec()
+  for {
+    var mod,username string
+    if !stmt.Next() { 
+      fmt.Println("Unknown Username")
+      return []byte("")
+      break
+    }
+    stmt.Scan(&mod,&username)
+    friends[mod] = username
+    
+  } 
+  stmt.Finalize()
+  friendsjson,err := json.Marshal(friends)
+  if err != nil {
+    fmt.Println(err)
+  }
+  return friendsjson
+}
+
 func WriteKey(key string){
   db.Exec("INSERT INTO key (key) VALUES (?)",key)
 }
 
+func GetUsername() string{
+  stmt, _ := db.Prepare("SELECT name FROM username")
+  stmt.Exec()
+  var username string
+  for {
+    if !stmt.Next() { 
+      fmt.Println("Unknown Username")
+      break
+    }
+    stmt.Scan(&username)
+    stmt.Finalize()
+    return username
+  } 
+  return ""
+}
 
 func GetHistory() []byte {
   tweets := GetTweets()
