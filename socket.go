@@ -53,7 +53,6 @@ func DialRelays(){
           var packet *Packet
           json.Unmarshal(buf[0:n],&packet)
           if packet.Type == "tweet" {
-            //fmt.Println(string(packet.Tweet.Sig))
             TweetWrite <- &packet.Tweet
           }
         }
@@ -85,8 +84,7 @@ func ListenClients(){
     var packet *Packet
     json.Unmarshal(buf[0:n],&packet)
     if packet.Type == "tweet" {
-      fmt.Println(string(packet.Tweet.Sig))
-      TweetWrite <- &packet.Tweet
+     TweetWrite <- &packet.Tweet
     }
     Clients <- c
   }
