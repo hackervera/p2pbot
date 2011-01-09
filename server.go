@@ -32,7 +32,7 @@ func main(){
   
   SetupDatabase()
   go TweetWriter()
-  //go ircStuff()
+  go ircStuff()
   //go b64test()
   go ConnectionMonitor()
 
