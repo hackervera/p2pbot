@@ -9,6 +9,7 @@ import "encoding/base64"
 import "crypto/sha256"
 import "fmt"
 import "big"
+//import "strings"
 
 
 func GenKey() (key *rsa.PrivateKey){
@@ -30,10 +31,14 @@ func Sign(message []byte) []byte {
 }
 
 func Verify(message []byte, sig []byte, name string) bool{
+  fmt.Println(name)
   mod := Base64Decode([]byte(name))
+  fmt.Println(string(mod))
   modbig := big.NewInt(0)
-  modbig.SetString(string(mod),10) 
+  modbig.SetBytes(mod) 
+  fmt.Println(modbig)
   key := &rsa.PublicKey{E:3,N:modbig}
+  fmt.Println(key)
   hasher := sha256.New()
   hasher.Write(message)
   hash := hasher.Sum()
@@ -66,16 +71,43 @@ func Encrypt(data []byte, key *rsa.PublicKey)(iv []byte, etext []byte, ckey []by
 }
 
 func Base64Encode(data []byte) []byte{
-  var EncodedText [10000]byte
+  var EncodedText [100000]byte
   n := base64.URLEncoding.EncodedLen(len(data))
   base64.URLEncoding.Encode(EncodedText[0:n], data)
   return EncodedText[0:n]
 }
 
 func Base64Decode(data []byte) []byte{
-  var DecodedText [10000]byte
+  var DecodedText [100000]byte
   n := base64.URLEncoding.DecodedLen(len(data))
   base64.URLEncoding.Decode(DecodedText[0:n], data)
-  return DecodedText[0:n]
+  var bytelength int
+  for _,byte := range DecodedText {
+    if byte != 0 {
+      //fmt.Println(byte)
+      bytelength++
+    }
+  }
+  return DecodedText[0:bytelength]
 }
 
+func b64test(){
+  key := GetKey()
+  //fmt.Println(key.PublicKey.N)
+  
+  modbytes := key.PublicKey.N.Bytes() // we want this byte value to re-create bigint
+  //bytes := []byte{0x9, 0x14, 0x20}
+  fmt.Println("bytes:",modbytes)
+  encoded := Base64Encode(modbytes) //base64 encode modbytes, pass value == encoded to decode
+  fmt.Println("encoded bytes:",string(encoded))
+  original := Base64Decode(encoded) 
+  var bytelength int
+
+  fmt.Println("decoded bytes:",original[0:bytelength])
+  
+  bigint := big.NewInt(0)
+  bigint.SetBytes(original[0:bytelength])
+  fmt.Println(bigint)
+  
+  
+}
