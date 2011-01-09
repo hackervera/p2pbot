@@ -34,12 +34,9 @@ func Sign(message []byte) []byte {
 func Verify(message []byte, sig []byte, name string) bool{
   fmt.Println(name)
   mod := Base64Decode([]byte(name))
-  fmt.Println(string(mod))
   modbig := big.NewInt(0)
   modbig.SetBytes(mod) 
-  fmt.Println(modbig)
   key := &rsa.PublicKey{E:3,N:modbig}
-  fmt.Println(key)
   hasher := sha256.New()
   hasher.Write(message)
   hash := hasher.Sum()
@@ -88,15 +85,17 @@ func Base64Decode(data []byte) []byte{
 
 func b64test(){
   key := GetKey()
-  //fmt.Println(key.PublicKey.N)
+  fmt.Println(key.PublicKey.N)
   
   modbytes := key.PublicKey.N.Bytes() // we want this byte value to re-create bigint
   //bytes := []byte{0x9, 0x14, 0x20}
   fmt.Println("bytes:",modbytes)
+  
+  
   encoded := Base64Encode(modbytes) //base64 encode modbytes, pass value == encoded to decode
   fmt.Println("encoded bytes:",string(encoded))
+  fmt.Println("username:",GetUsername())
   original := Base64Decode(encoded) 
-
   fmt.Println("decoded bytes:",original)
   
   bigint := big.NewInt(0)

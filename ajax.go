@@ -3,12 +3,14 @@ import (
   "http"
   "io/ioutil"
   "regexp"
+  "fmt"
 )
 
 func Index(w http.ResponseWriter, r *http.Request){
   index,_ := ioutil.ReadFile("index.html")
   re := regexp.MustCompile("NAME")
   name := GetUsername()
+  fmt.Println(name)
   index = re.ReplaceAll(index, []byte(name))
   w.Write(index)
 }
