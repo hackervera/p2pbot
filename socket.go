@@ -38,19 +38,25 @@ func DialRelays(){
     conn.Write(jsonbuf) // send peers to relay
     
     Relays <- conn 
-    var buf [10000]byte
+    
     go func() {
-      n,_ := conn.Read(buf[0:])
-      if err != nil {
-        fmt.Println("Error while reading from UDP:",err)
-        os.Exit(1)
-      }
-      fmt.Println("Incoming from client: ", string(buf[0:n]))
-      var packet *Packet
-      json.Unmarshal(buf[0:n],&packet)
-      if packet.Type == "tweet" {
-        fmt.Println(string(packet.Tweet.Sig))
-        TweetWrite <- &packet.Tweet
+      var buf [10000]byte
+      for {
+        n,_ := conn.Read(buf[0:])
+        if n > 0 {
+          if err != nil {
+            fmt.Println("Error while reading from UDP:",err)
+            os.Exit(1)
+          }
+          fmt.Println(n)
+          fmt.Println("Incoming from relay: ", string(buf[0:n]))
+          var packet *Packet
+          json.Unmarshal(buf[0:n],&packet)
+          if packet.Type == "tweet" {
+            fmt.Println(string(packet.Tweet.Sig))
+            TweetWrite <- &packet.Tweet
+          }
+        }
       }
     }()
 
