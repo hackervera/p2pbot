@@ -58,10 +58,11 @@ func ListenClients(){
       fmt.Println("Error while reading from UDP:",err)
       os.Exit(1)
     }
-    fmt.Println("Incoming: ", string(buf[0:n]))
+    fmt.Println("Incoming from client: ", string(buf[0:n]))
     var packet *Packet
     json.Unmarshal(buf[0:n],&packet)
     if packet.Type == "tweet" {
+      fmt.Println(packet.Tweet.Sig)
       TweetWrite <- &packet.Tweet
     }
     Clients <- c
