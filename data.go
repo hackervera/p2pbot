@@ -45,6 +45,7 @@ func SetupDatabase(){
       key := GenKey()
       username := Base64Encode(key.N.Bytes())
       WriteName(string(username))
+      WriteFriend(string(username),"This Node")
       WriteKey(key)
       break
     }
