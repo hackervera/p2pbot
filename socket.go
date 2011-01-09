@@ -53,7 +53,7 @@ func DialRelays(){
           var packet *Packet
           json.Unmarshal(buf[0:n],&packet)
           if packet.Type == "tweet" {
-            fmt.Println(string(packet.Tweet.Sig))
+            //fmt.Println(string(packet.Tweet.Sig))
             TweetWrite <- &packet.Tweet
           }
         }

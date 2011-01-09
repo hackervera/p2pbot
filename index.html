@@ -36,7 +36,7 @@ function pullTweets(){
         $('#json').prepend("<p><a href='#' onClick='addName(\""+tweet.Name+"\")' onMouseOver='show("+i+");' onMouseOut='hide("+i+")'>Unknown</a> says " + 
         tweet.Message + " at " + tweet.Timestamp+"</p>"+"<div id='tweet-"+i+ "' style='display:none'><b>Click link to add to addressbook:</b> "+tweet.Name+" </div>");
       } else {
-        $('#json').prepend("<p>"+names[tweet.Name]+" says: " + tweet.Message + " at " + tweet.Timestamp+"</p>");
+        $('#json').prepend("<p><a href='#' onClick='addName(\""+tweet.Name+"\")'>"+names[tweet.Name]+"</a> says: " + tweet.Message + " at " + tweet.Timestamp+"</p>");
       }
     }
   });
@@ -58,7 +58,7 @@ function hide(i){
 function addName(mod){
   //alert(name);
   username = prompt('What would you like to add this name as?');
-  if (username != null){
+  if (username.length > 1){
     $.getJSON("/addfriend",{mod:mod,username:username});
   }
   setTimeout(getAddressBook,1000);
