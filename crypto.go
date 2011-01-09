@@ -4,11 +4,12 @@ import "crypto/rand"
 import "crypto/block"
 import "crypto/aes"
 import "bytes"
+import "crypto/rsa"
 import "encoding/base64"
 import "crypto/sha256"
 import "fmt"
+import "big"
 
-import "crypto/rsa"
 
 func GenKey() (key *rsa.PrivateKey){
   key,_ = rsa.GenerateKey(rand.Reader, 2048)
@@ -28,14 +29,16 @@ func Sign(message []byte) []byte {
   return sig
 }
 
-func Verify(message []byte, sig []byte) bool{
-  key := GetKey()
-  pub := key.PublicKey
+func Verify(message []byte, sig []byte, name string) bool{
+  mod := Base64Decode([]byte(name))
+  modbig := big.NewInt(0)
+  modbig.SetString(string(mod),10) 
+  key := &rsa.PublicKey{E:3,N:modbig}
   hasher := sha256.New()
   hasher.Write(message)
   hash := hasher.Sum()
 
-  test := rsa.VerifyPKCS1v15(&pub, rsa.HashSHA256, hash, sig)
+  test := rsa.VerifyPKCS1v15(key, rsa.HashSHA256, hash, sig)
   if test != nil {
     return false
   }

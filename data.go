@@ -258,7 +258,7 @@ func TweetWriter(){
     fmt.Println("Waiting for next tweet")
     tweet :=<-TweetWrite
     stmt,perr := db.Prepare("SELECT * FROM tweets WHERE timestamp = ?")
-    test := Verify([]byte(tweet.Message), tweet.Sig)
+    test := Verify([]byte(tweet.Message), tweet.Sig, tweet.Name)
     if test != true {
       fmt.Println("not verified")
       continue
