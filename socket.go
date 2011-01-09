@@ -13,6 +13,12 @@ var Tweets = make(chan *Tweet)
 var Relays = make(chan *net.UDPConn)
 var Clients = make(chan *net.UDPConn)
 
+type Packet struct {
+  Type string
+  Tweet
+  Relays []string
+}
+
 
 func DialRelays(){ 
   relays := GetRelays()
@@ -53,9 +59,11 @@ func ListenClients(){
       os.Exit(1)
     }
     fmt.Println("Incoming: ", string(buf[0:n]))
-    var tweet *Tweet
-    json.Unmarshal(buf[0:n],tweet)
-    TweetWrite <- tweet
+    var packet *Packet
+    json.Unmarshal(buf[0:n],&packet)
+    if packet.Type == "tweet" {
+      TweetWrite <- &packet.Tweet
+    }
     Clients <- c
   }
 }
@@ -70,7 +78,8 @@ func ConnectionMonitor(){ //multiplexer for client connections, tweets, and rela
       conns[connection] = "client"
     case tweet :=<-Tweets: // send tweets to connections
       fmt.Println("incoming tweet")
-      jsonbuf,err := json.Marshal(tweet)
+      packet := &Packet{Type:"tweet",Tweet:*tweet}
+      jsonbuf,err := json.Marshal(&packet)
       if err != nil {
         fmt.Println(err)
       }
