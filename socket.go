@@ -53,6 +53,9 @@ func ListenClients(){
       os.Exit(1)
     }
     fmt.Println("Incoming: ", string(buf[0:n]))
+    var tweet *Tweet
+    json.Unmarshal(buf[0:n],tweet)
+    TweetWrite <- tweet
     Clients <- c
   }
 }
