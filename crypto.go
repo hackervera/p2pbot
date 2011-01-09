@@ -82,14 +82,8 @@ func Base64Decode(data []byte) []byte{
   var DecodedText [100000]byte
   n := base64.URLEncoding.DecodedLen(len(data))
   base64.URLEncoding.Decode(DecodedText[0:n], data)
-  var bytelength int
-  for _,byte := range DecodedText {
-    if byte != 0 {
-      //fmt.Println(byte)
-      bytelength++
-    }
-  }
-  return DecodedText[0:bytelength]
+  var i int; for i = len(DecodedText); i > 0 && DecodedText[i-1] == 0; i-- {}; 
+  return DecodedText[:i]
 }
 
 func b64test(){
@@ -102,12 +96,11 @@ func b64test(){
   encoded := Base64Encode(modbytes) //base64 encode modbytes, pass value == encoded to decode
   fmt.Println("encoded bytes:",string(encoded))
   original := Base64Decode(encoded) 
-  var bytelength int
 
-  fmt.Println("decoded bytes:",original[0:bytelength])
+  fmt.Println("decoded bytes:",original)
   
   bigint := big.NewInt(0)
-  bigint.SetBytes(original[0:bytelength])
+  bigint.SetBytes(original)
   fmt.Println(bigint)
   
   
